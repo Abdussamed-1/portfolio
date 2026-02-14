@@ -1,4 +1,4 @@
-export { BackgroundWithMobileFlow } from "@/components/BackgroundWithMobileFlow";
+export { default as BackgroundWithMobileFlow } from "@/components/BackgroundWithMobileFlow";
 export { Header } from "@/components/Header";
 export { Footer } from "@/components/Footer";
 export { Mailchimp } from "@/components/Mailchimp";
