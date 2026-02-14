@@ -10,6 +10,7 @@ export {
   gallery,
   getContent,
 } from "./content";
+export { getProjectContent } from "./workProjectContent";
 export type { Locale } from "@/resources/translations";
 
 export {

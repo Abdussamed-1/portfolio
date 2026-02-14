@@ -16,6 +16,16 @@ const nextConfig = {
         hostname: "www.google.com",
         pathname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "vyiejdlbqrdkqawfikup.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "miro.medium.com",
+        pathname: "/**",
+      },
     ],
   },
   sassOptions: {

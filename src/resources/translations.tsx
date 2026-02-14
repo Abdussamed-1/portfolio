@@ -19,6 +19,11 @@ export const stringsByLocale: Record<
     newsletterDescription: string;
     techNewsTitle: string;
     newsLinksTitle: string;
+    projectsLabel: string;
+    relatedProjects: string;
+    readCaseStudy: string;
+    viewProject: string;
+    contributorsTitle: string;
   }
 > = {
   en: {
@@ -43,7 +48,7 @@ export const stringsByLocale: Record<
     technicalTitle: "Technical skills",
     featuredWork: "Featured",
     workLabel: "Work",
-    headline: <>From data to decisions — computational solutions at the edge of science</>,
+    headline: <>From data to decisions</>,
     subline: (
       <>
         I&apos;m Samet — I work at the intersection of <Text as="span" size="xl" weight="strong">AI</Text>, data science and bioinformatics, <br />
@@ -54,6 +59,11 @@ export const stringsByLocale: Record<
     newsletterDescription: "Updates on AI, data science and side projects",
     techNewsTitle: "Featured Tech News",
     newsLinksTitle: "Useful links",
+    projectsLabel: "Projects",
+    relatedProjects: "Related projects",
+    readCaseStudy: "Read case study",
+    viewProject: "View project",
+    contributorsTitle: "Contributors",
   },
   tr: {
     nav: {
@@ -77,7 +87,7 @@ export const stringsByLocale: Record<
     technicalTitle: "Teknik beceriler",
     featuredWork: "Öne çıkan",
     workLabel: "İş",
-    headline: <>Veriden karara — bilimin sınırında hesaplamalı çözümler</>,
+    headline: <>Veriden karara</>,
     subline: (
       <>
         Ben Samet — <Text as="span" size="xl" weight="strong">Yapay zeka</Text>, veri bilimi ve biyoinformatik kesişiminde çalışıyorum; <br />
@@ -88,5 +98,10 @@ export const stringsByLocale: Record<
     newsletterDescription: "Yapay zeka, veri bilimi ve projelerden güncellemeler",
     techNewsTitle: "Ayın teknoloji bülteni",
     newsLinksTitle: "Faydalı linkler",
+    projectsLabel: "Projeler",
+    relatedProjects: "İlgili projeler",
+    readCaseStudy: "Proje detayı",
+    viewProject: "Projeyi görüntüle",
+    contributorsTitle: "Katkıda bulunanlar",
   },
 };

@@ -17,12 +17,13 @@ export const Mailchimp: React.FC<React.ComponentProps<typeof Column>> = ({ ...fl
   const [email, setEmail] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [touched, setTouched] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [success, setSuccess] = useState<boolean>(false);
 
   const validateEmail = (email: string): boolean => {
     if (email === "") {
       return true;
     }
-
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailPattern.test(email);
   };
@@ -30,7 +31,7 @@ export const Mailchimp: React.FC<React.ComponentProps<typeof Column>> = ({ ...fl
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEmail(value);
-
+    setSuccess(false);
     if (!validateEmail(value)) {
       setError("Please enter a valid email address.");
     } else {
@@ -44,6 +45,32 @@ export const Mailchimp: React.FC<React.ComponentProps<typeof Column>> = ({ ...fl
     setTouched(true);
     if (!validateEmail(email)) {
       setError("Please enter a valid email address.");
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    if (!validateEmail(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data?.error || "Something went wrong. Please try again.");
+        return;
+      }
+      setSuccess(true);
+      setEmail("");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -118,65 +145,52 @@ export const Mailchimp: React.FC<React.ComponentProps<typeof Column>> = ({ ...fl
           display: "flex",
           justifyContent: "center",
         }}
-        action={mailchimp.action}
-        method="post"
-        id="mc-embedded-subscribe-form"
-        name="mc-embedded-subscribe-form"
+        onSubmit={handleSubmit}
+        id="newsletter-subscribe-form"
       >
         <Row
-          id="mc_embed_signup_scroll"
           fillWidth
           maxWidth={24}
           s={{ direction: "column" }}
           gap="8"
         >
-          <Input
-            formNoValidate
-            id="mce-EMAIL"
-            name="EMAIL"
-            type="email"
-            placeholder="Email"
-            required
-            onChange={(e) => {
-              if (error) {
-                handleChange(e);
-              } else {
-                debouncedHandleChange(e);
-              }
-            }}
-            onBlur={handleBlur}
-            errorMessage={error}
-          />
-          <div style={{ display: "none" }}>
-            <input
-              type="checkbox"
-              readOnly
-              name="group[3492][1]"
-              id="mce-group[3492]-3492-0"
-              value=""
-              checked
-            />
-          </div>
-          <div id="mce-responses" className="clearfalse">
-            <div className="response" id="mce-error-response" style={{ display: "none" }}></div>
-            <div className="response" id="mce-success-response" style={{ display: "none" }}></div>
-          </div>
-          <div aria-hidden="true" style={{ position: "absolute", left: "-5000px" }}>
-            <input
-              type="text"
-              readOnly
-              name="b_c1a5a210340eb6c7bff33b2ba_0462d244aa"
-              tabIndex={-1}
-              value=""
-            />
-          </div>
-          <div className="clear">
-            <Row height="48" vertical="center">
-              <Button id="mc-embedded-subscribe" value="Subscribe" size="m" fillWidth>
-                Subscribe
-              </Button>
-            </Row>
-          </div>
+          {success ? (
+            <Text variant="body-default-l" onBackground="neutral-weak">
+              Thanks! You&apos;re subscribed. You&apos;ll get weekly news and new blog post updates.
+            </Text>
+          ) : (
+            <>
+              <Input
+                formNoValidate
+                id="newsletter-email"
+                name="email"
+                type="email"
+                placeholder="Email"
+                value={email}
+                required
+                disabled={loading}
+                onChange={(e) => {
+                  if (error) {
+                    handleChange(e);
+                  } else {
+                    debouncedHandleChange(e);
+                  }
+                }}
+                onBlur={handleBlur}
+                errorMessage={error}
+              />
+              <Row height="48" vertical="center">
+                <Button
+                  type="submit"
+                  size="m"
+                  fillWidth
+                  disabled={loading}
+                >
+                  {loading ? "Subscribing…" : "Subscribe"}
+                </Button>
+              </Row>
+            </>
+          )}
         </Row>
       </form>
     </Column>

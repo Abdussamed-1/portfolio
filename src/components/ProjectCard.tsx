@@ -10,6 +10,9 @@ import {
   Text,
 } from "@once-ui-system/core";
 
+import { stringsByLocale } from "@/resources/translations";
+import type { Locale } from "@/resources/translations";
+
 interface ProjectCardProps {
   href: string;
   priority?: boolean;
@@ -19,6 +22,7 @@ interface ProjectCardProps {
   description: string;
   avatars: { src: string }[];
   link: string;
+  locale?: Locale;
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
@@ -29,13 +33,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   description,
   avatars,
   link,
+  locale = "en",
 }) => {
   const hasImages = images?.length > 0;
+  const strings = stringsByLocale[locale];
 
   return (
     <Column fillWidth gap="m">
       {hasImages ? (
         <Carousel
+          className="project-card-carousel"
           sizes="(max-width: 960px) 100vw, 960px"
           items={images.map((image) => ({
             slide: image,
@@ -82,7 +89,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                   style={{ margin: "0", width: "fit-content" }}
                   href={href}
                 >
-                  <Text variant="body-default-s">Read case study</Text>
+                  <Text variant="body-default-s">{strings.readCaseStudy}</Text>
                 </SmartLink>
               )}
               {link && (
@@ -91,7 +98,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                   style={{ margin: "0", width: "fit-content" }}
                   href={link}
                 >
-                  <Text variant="body-default-s">View project</Text>
+                  <Text variant="body-default-s">{strings.viewProject}</Text>
                 </SmartLink>
               )}
             </Flex>

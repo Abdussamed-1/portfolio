@@ -111,3 +111,11 @@
     transform: scale(1.12) translate(-2%, -2%);
   }
 }
+
+/* Proje kartı carousel: ok ile geçişte yumuşak geçiş */
+.project-card-carousel [class*="revealFx"],
+.project-card-carousel [class*="hiddenNoMask"],
+.project-card-carousel [class*="revealedNoMask"] {
+  transition-duration: 0.5s !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
