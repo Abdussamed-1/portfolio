@@ -30,15 +30,28 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   avatars,
   link,
 }) => {
+  const hasImages = images?.length > 0;
+
   return (
     <Column fillWidth gap="m">
-      <Carousel
-        sizes="(max-width: 960px) 100vw, 960px"
-        items={images.map((image) => ({
-          slide: image,
-          alt: title,
-        }))}
-      />
+      {hasImages ? (
+        <Carousel
+          sizes="(max-width: 960px) 100vw, 960px"
+          items={images.map((image) => ({
+            slide: image,
+            alt: title,
+          }))}
+        />
+      ) : (
+        <Flex
+          fillWidth
+          style={{ aspectRatio: "16/9", background: "var(--color-neutral-alpha-weak, rgba(0,0,0,0.04))", borderRadius: "var(--static-radius-m)" }}
+          vertical="center"
+          horizontal="center"
+        >
+          <Text variant="label-default-s" onBackground="neutral-weak">Proje görseli yok</Text>
+        </Flex>
+      )}
       <Flex
         s={{ direction: "column" }}
         fillWidth
@@ -54,7 +67,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             </Heading>
           </Flex>
         )}
-        {(avatars?.length > 0 || description?.trim() || content?.trim()) && (
+        {(avatars?.length > 0 || description?.trim() || content?.trim() || link) && (
           <Column flex={7} gap="16">
             {avatars?.length > 0 && <AvatarGroup avatars={avatars} size="m" reverse />}
             {description?.trim() && (

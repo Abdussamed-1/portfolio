@@ -1,0 +1,24 @@
+.roundButton {
+  width: var(--static-space-24);
+  height: var(--static-space-24);
+  min-width: var(--static-space-24);
+  min-height: var(--static-space-24);
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent !important;
+  color: var(--color-neutral-strong);
+  opacity: 0.75;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+
+  &:hover {
+    opacity: 1;
+    background-color: var(--color-neutral-alpha-weak) !important;
+  }
+
+  &:active {
+    background-color: var(--color-neutral-alpha-medium) !important;
+  }
+}

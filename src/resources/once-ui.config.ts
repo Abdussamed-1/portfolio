@@ -21,7 +21,7 @@ const routes: RoutesConfig = {
   "/about": true,
   "/work": true,
   "/blog": true,
-  "/gallery": true,
+  "/news": true,
 };
 
 const display: DisplayConfig = {
@@ -101,25 +101,25 @@ const dataStyle: DataStyleConfig = {
 
 const effects: EffectsConfig = {
   mask: {
-    cursor: false,
+    cursor: true,
     x: 50,
     y: 0,
-    radius: 100,
+    radius: 80,
   },
   gradient: {
-    display: false,
-    opacity: 100,
+    display: true,
+    opacity: 70,
     x: 50,
-    y: 60,
-    width: 100,
-    height: 50,
+    y: 50,
+    width: 80,
+    height: 80,
     tilt: 0,
     colorStart: "accent-background-strong",
     colorEnd: "page-background",
   },
   dots: {
     display: true,
-    opacity: 40,
+    opacity: 50,
     size: "2",
     color: "brand-background-strong",
   },
@@ -196,7 +196,7 @@ const schema: SchemaConfig = {
 // social links
 const sameAs: SameAsConfig = {
   threads: "https://www.threads.com/@once_ui",
-  linkedin: "https://www.linkedin.com/company/once-ui/",
+  linkedin: "https://www.linkedin.com/in/sameterkalp/",
   discord: "https://discord.com/invite/5EyAQ4eNdS",
 };
 
@@ -216,6 +216,14 @@ const socialSharing: SocialSharingConfig = {
   },
 };
 
+/** RSS feed URLs – thumbnail/resim veren feed'ler (media:thumbnail veya content içinde img). TechCrunch çıkarıldı (resim gelmiyordu). */
+const techNewsFeeds: string[] = [
+  "https://feeds.arstechnica.com/arstechnica/index",
+  "https://www.wired.com/feed/rss",
+  "https://www.theverge.com/rss/index.xml",
+  "https://feeds.engadget.com/rss",
+];
+
 export {
   display,
   mailchimp,
@@ -229,4 +237,5 @@ export {
   socialSharing,
   effects,
   dataStyle,
+  techNewsFeeds,
 };

@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import {
   Avatar,
   Button,
@@ -12,12 +13,16 @@ import {
   Schema,
   Row,
 } from "@once-ui-system/core";
-import { baseURL, about, person, social } from "@/resources";
+import { baseURL, getContent } from "@/resources";
+import type { Locale } from "@/resources/translations";
 import TableOfContents from "@/components/about/TableOfContents";
 import styles from "@/components/about/about.module.scss";
 import React from "react";
 
 export async function generateMetadata() {
+  const cookieStore = await cookies();
+  const locale = (cookieStore.get("locale")?.value === "tr" ? "tr" : "en") as Locale;
+  const { about } = getContent(locale);
   return Meta.generate({
     title: about.title,
     description: about.description,
@@ -27,7 +32,11 @@ export async function generateMetadata() {
   });
 }
 
-export default function About() {
+export default async function About() {
+  const cookieStore = await cookies();
+  const locale = (cookieStore.get("locale")?.value === "tr" ? "tr" : "en") as Locale;
+  const { about, person, social } = getContent(locale);
+
   const structure = [
     {
       title: about.intro.title,
@@ -96,7 +105,7 @@ export default function About() {
             <Avatar src={person.avatar} size="xl" />
             <Row gap="8" vertical="center">
               <Icon onBackground="accent-weak" name="globe" />
-              {person.location}
+              {person.locationLabel ?? person.location}
             </Row>
             {person.languages && person.languages.length > 0 && (
               <Row wrap gap="8">
@@ -207,49 +216,48 @@ export default function About() {
               <Heading as="h2" id={about.work.title} variant="display-strong-s" marginBottom="m">
                 {about.work.title}
               </Heading>
-              <Column fillWidth gap="l" marginBottom="40">
+              <Column fillWidth className={styles.workList} marginBottom="40">
                 {about.work.experiences.map((experience, index) => (
-                  <Column key={`${experience.company}-${experience.role}-${index}`} fillWidth>
-                    <Row fillWidth horizontal="between" vertical="end" marginBottom="4">
-                      <Text id={experience.company} variant="heading-strong-l">
+                  <Column
+                    key={`${experience.company}-${experience.role}-${index}`}
+                    id={experience.company}
+                    fillWidth
+                    className={styles.workCard}
+                  >
+                    <div className={styles.workCardHeader}>
+                      <Text as="span" variant="heading-strong-m" className={styles.workCompany}>
                         {experience.company}
                       </Text>
-                      <Text variant="heading-default-xs" onBackground="neutral-weak">
+                      <Text as="span" variant="label-default-s" className={styles.workTimeframe}>
                         {experience.timeframe}
                       </Text>
-                    </Row>
-                    <Text variant="body-default-s" onBackground="brand-weak" marginBottom="m">
+                    </div>
+                    <Text as="p" variant="body-default-s" className={styles.workRole}>
                       {experience.role}
                     </Text>
-                    <Column as="ul" gap="16">
+                    <ul className={styles.workAchievements}>
                       {experience.achievements.map(
-                        (achievement: React.ReactNode, index: number) => (
-                          <Text
-                            as="li"
-                            variant="body-default-m"
-                            key={`${experience.company}-${index}`}
-                          >
-                            {achievement}
-                          </Text>
+                        (achievement: React.ReactNode, i: number) => (
+                          <li key={`${experience.company}-${i}`}>{achievement}</li>
                         ),
                       )}
-                    </Column>
+                    </ul>
                     {experience.images && experience.images.length > 0 && (
-                      <Row fillWidth paddingTop="m" paddingLeft="40" gap="12" wrap>
-                        {experience.images.map((image, index) => (
+                      <Row fillWidth paddingTop="m" gap="12" wrap>
+                        {experience.images.map((img, imgIndex) => (
                           <Row
-                            key={index}
+                            key={imgIndex}
                             border="neutral-medium"
                             radius="m"
-                            minWidth={image.width}
-                            height={image.height}
+                            minWidth={img.width}
+                            height={img.height}
                           >
                             <Media
                               enlarge
                               radius="m"
-                              sizes={image.width.toString()}
-                              alt={image.alt}
-                              src={image.src}
+                              sizes={img.width.toString()}
+                              alt={img.alt}
+                              src={img.src}
                             />
                           </Row>
                         ))}
@@ -266,10 +274,16 @@ export default function About() {
               <Heading as="h2" id={about.studies.title} variant="display-strong-s" marginBottom="m">
                 {about.studies.title}
               </Heading>
-              <Column fillWidth gap="l" marginBottom="40">
+              <Column fillWidth className={styles.studiesList} marginBottom="40">
                 {about.studies.institutions.map((institution, index) => (
-                  <Column key={`${institution.name}-${index}`} fillWidth gap="4">
-                    <Text id={institution.name} variant="heading-strong-l">
+                  <Column
+                    key={`${institution.name}-${index}`}
+                    id={institution.name}
+                    fillWidth
+                    gap="4"
+                    className={styles.studyCard}
+                  >
+                    <Text variant="heading-strong-l">
                       {institution.name}
                     </Text>
                     <Text variant="heading-default-xs" onBackground="neutral-weak">
@@ -287,14 +301,20 @@ export default function About() {
                 as="h2"
                 id={about.technical.title}
                 variant="display-strong-s"
-                marginBottom="40"
+                marginBottom="m"
               >
                 {about.technical.title}
               </Heading>
-              <Column fillWidth gap="l">
+              <Column fillWidth className={styles.technicalList}>
                 {about.technical.skills.map((skill, index) => (
-                  <Column key={`${skill}-${index}`} fillWidth gap="4">
-                    <Text id={skill.title} variant="heading-strong-l">
+                  <Column
+                    key={`${skill.title}-${index}`}
+                    id={skill.title}
+                    fillWidth
+                    gap="4"
+                    className={styles.technicalCard}
+                  >
+                    <Text variant="heading-strong-l">
                       {skill.title}
                     </Text>
                     <Text variant="body-default-m" onBackground="neutral-weak">
@@ -311,9 +331,9 @@ export default function About() {
                     )}
                     {skill.images && skill.images.length > 0 && (
                       <Row fillWidth paddingTop="m" gap="12" wrap>
-                        {skill.images.map((image, index) => (
+                        {skill.images.map((image, imgIndex) => (
                           <Row
-                            key={index}
+                            key={imgIndex}
                             border="neutral-medium"
                             radius="m"
                             minWidth={image.width}

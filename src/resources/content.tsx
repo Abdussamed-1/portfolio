@@ -1,22 +1,25 @@
 import { About, Blog, Gallery, Home, Newsletter, Person, Social, Work } from "@/types";
 import { Line, Row, Text } from "@once-ui-system/core";
+import type { Locale } from "@/resources/translations";
+import { stringsByLocale } from "@/resources/translations";
 
 const person: Person = {
-  firstName: "Selene",
-  lastName: "Yu",
-  name: `Selene Yu`,
-  role: "Design Engineer",
-  avatar: "/images/avatar.jpg",
-  email: "example@gmail.com",
-  location: "Asia/Jakarta", // Expecting the IANA time zone identifier, e.g., 'Europe/Vienna'
-  languages: ["English", "Bahasa"], // optional: Leave the array empty if you don't want to display languages
+  firstName: "Samet",
+  lastName: "Erkalp",
+  name: "Samet Erkalp",
+  role: "AI & Data Science Engineer",
+  avatar: "/favicon-source.png",
+  email: "abdulsamet@chinarqai.com",
+  location: "Europe/Istanbul",
+  locationLabel: "Istanbul, Europe",
+  languages: ["English", "Turkish"],
 };
 
-const newsletter: Newsletter = {
+const getNewsletter = (locale: Locale): Newsletter => ({
   display: true,
-  title: <>Subscribe to {person.firstName}'s Newsletter</>,
-  description: <>My weekly newsletter about creativity and engineering</>,
-};
+  title: <>{stringsByLocale[locale].newsletterTitle}</>,
+  description: <>{stringsByLocale[locale].newsletterDescription}</>,
+});
 
 const social: Social = [
   // Links are automatically displayed.
@@ -25,13 +28,13 @@ const social: Social = [
   {
     name: "GitHub",
     icon: "github",
-    link: "https://github.com/once-ui-system",
+    link: "https://github.com/Abdussamed-1",
     essential: true,
   },
   {
     name: "LinkedIn",
     icon: "linkedin",
-    link: "https://www.linkedin.com/company/once-ui/",
+    link: "https://www.linkedin.com/in/sameterkalp/",
     essential: true,
   },
   {
@@ -54,36 +57,40 @@ const social: Social = [
   },
 ];
 
-const home: Home = {
+const homeBase: Omit<Home, "label" | "headline" | "subline"> = {
   path: "/",
   image: "/images/og/home.jpg",
-  label: "Home",
   title: `${person.name}'s Portfolio`,
   description: `Portfolio website showcasing my work as a ${person.role}`,
-  headline: <>Building bridges between design and code</>,
   featured: {
     display: true,
+    href: "/work/building-once-ui-a-customizable-design-system",
+    title: null, // overridden in getHome
+  },
+};
+
+const getHome = (locale: Locale): Home => ({
+  ...homeBase,
+  label: stringsByLocale[locale].nav.home,
+  headline: stringsByLocale[locale].headline,
+  subline: stringsByLocale[locale].subline,
+  featured: {
+    display: true,
+    href: homeBase.featured.href,
     title: (
       <Row gap="12" vertical="center">
-        <strong className="ml-4">Once UI</strong>{" "}
+        <strong className="ml-4">{stringsByLocale[locale].featuredWork}</strong>{" "}
         <Line background="brand-alpha-strong" vert height="20" />
         <Text marginRight="4" onBackground="brand-medium">
-          Featured work
+          {stringsByLocale[locale].workLabel}
         </Text>
       </Row>
     ),
-    href: "/work/building-once-ui-a-customizable-design-system",
   },
-  subline: (
-    <>
-    I'm Selene, a design engineer at <Text as="span" size="xl" weight="strong">ONCE UI</Text>, where I craft intuitive <br /> user experiences. After hours, I build my own projects.
-</>
-  ),
-};
+});
 
-const about: About = {
+const aboutBase: Omit<About, "label" | "intro"> = {
   path: "/about",
-  label: "About",
   title: `About – ${person.name}`,
   description: `Meet ${person.name}, ${person.role} from ${person.location}`,
   tableOfContent: {
@@ -97,208 +104,239 @@ const about: About = {
     display: true,
     link: "https://cal.com",
   },
-  intro: {
-    display: true,
-    title: "Introduction",
-    description: (
-      <>
-        Selene is a Jakarta-based design engineer with a passion for transforming complex challenges
-        into simple, elegant design solutions. Her work spans digital interfaces, interactive
-        experiences, and the convergence of design and technology.
-      </>
-    ),
-  },
   work: {
-    display: true, // set to false to hide this section
+    display: true,
     title: "Work Experience",
     experiences: [
       {
-        company: "FLY",
-        timeframe: "2022 - Present",
-        role: "Senior Design Engineer",
+        company: "Chinar Quantum AI Türkiye",
+        timeframe: "Aug 2025 - Present",
+        role: "Quantum Machine Learning Intern · Paid Quantum Intern",
         achievements: [
-          <>
-            Redesigned the UI/UX for the FLY platform, resulting in a 20% increase in user
-            engagement and 30% faster load times.
-          </>,
-          <>
-            Spearheaded the integration of AI tools into design workflows, enabling designers to
-            iterate 50% faster.
-          </>,
+          <>Istanbul · Hybrid / On-site. BB84 Protocol, Quantum Computing, Mid-Circuit.</>,
         ],
-        images: [
-          // optional: leave the array empty if you don't want to display images
-          {
-            src: "/images/projects/project-01/cover-01.jpg",
-            alt: "Once UI Project",
-            width: 16,
-            height: 9,
-          },
-        ],
+        images: [],
       },
       {
-        company: "Creativ3",
-        timeframe: "2018 - 2022",
-        role: "Lead Designer",
+        company: "HSD İNÖNÜ",
+        timeframe: "Feb 2025 - Present",
+        role: "DevOps Developer",
         achievements: [
-          <>
-            Developed a design system that unified the brand across multiple platforms, improving
-            design consistency by 40%.
-          </>,
-          <>
-            Led a cross-functional team to launch a new product line, contributing to a 15% increase
-            in overall company revenue.
-          </>,
+          <>Malatya · Full-time. RAG, Apache Spark, ECS, Cloud Computing.</>,
+        ],
+        images: [],
+      },
+      {
+        company: "UNILAB Vision Turkiye",
+        timeframe: "Aug 2024 - Feb 2026",
+        role: "Data Scientist",
+        achievements: [
+          <>Istanbul · Remote. Python, Git, Veri Analizi, EDA, Data Analysis.</>,
+        ],
+        images: [],
+      },
+      {
+        company: "UNIDEV Software Türkiye",
+        timeframe: "Jul 2024 - Feb 2026",
+        role: "Veri Bilimi Uzmanı",
+        achievements: [
+          <>Istanbul · Freelance, Remote. Deep Learning, Django, React.js, ML, Biyoenformatik.</>,
+        ],
+        images: [],
+      },
+      {
+        company: "MyUNI Türkiye",
+        timeframe: "Aug 2024 - Feb 2026",
+        role: "Software Developer",
+        achievements: [
+          <>Istanbul · Freelance.</>,
+        ],
+        images: [],
+      },
+      {
+        company: "QTurkey",
+        timeframe: "Feb 2025 - Mar 2025",
+        role: "Mentör",
+        achievements: [
+          <>Remote · Seasonal. Koçluk & Mentörlük.</>,
+        ],
+        images: [],
+      },
+      {
+        company: "İNÜGEN – İnönü Üniversitesi Genetik Topluluğu",
+        timeframe: "Aug 2024 - Mar 2025",
+        role: "Project Manager",
+        achievements: [
+          <>Malatya · Student Services, Project Manager.</>,
+        ],
+        images: [],
+      },
+      {
+        company: "Qursunoglu Quantum Computing",
+        timeframe: "Dec 2024 - Feb 2025",
+        role: "Software Programmer",
+        achievements: [
+          <>Ankara · Hybrid. Git, Araştırma, analitik beceriler.</>,
+        ],
+        images: [],
+      },
+      {
+        company: "MBG Türkiye (Moleküler Biyoloji ve Genetik)",
+        timeframe: "Mar 2023 - Jan 2025",
+        role: "Content Writer · Volunteer · Co-Chairman",
+        achievements: [
+          <>Istanbul · Remote. İçerik üretimi, CRM, ekip liderliği, araştırma.</>,
         ],
         images: [],
       },
     ],
   },
   studies: {
-    display: true, // set to false to hide this section
+    display: true,
     title: "Studies",
     institutions: [
       {
-        name: "University of Jakarta",
-        description: <>Studied software engineering.</>,
+        name: "İnönü Üniversitesi",
+        description: <>Undergraduate, Molecular Biology and Genetics. Oct 2023 - Jul 2027.</>,
       },
       {
-        name: "Build the Future",
-        description: <>Studied online marketing and personal branding.</>,
+        name: "İnönü Üniversitesi – Hazırlık",
+        description: <>Undergraduate, Prep School. Sep 2022 - Jun 2023. Grade: 78.</>,
       },
     ],
   },
   technical: {
-    display: true, // set to false to hide this section
+    display: true,
     title: "Technical skills",
     skills: [
       {
-        title: "Figma",
-        description: (
-          <>Able to prototype in Figma with Once UI with unnatural speed.</>
-        ),
+        title: "Kuantum & ML",
+        description: <>Kuantum hesaplama, kuantum makine öğrenmesi ve ilgili protokoller.</>,
         tags: [
-          {
-            name: "Figma",
-            icon: "figma",
-          },
+          { name: "Quantum Computing" },
+          { name: "BB84 Protocol" },
+          { name: "Mid-Circuit" },
+          { name: "Quantum Programming" },
+          { name: "QBronze" },
         ],
-        // optional: leave the array empty if you don't want to display images
-        images: [
-          {
-            src: "/images/projects/project-01/cover-02.jpg",
-            alt: "Project image",
-            width: 16,
-            height: 9,
-          },
-          {
-            src: "/images/projects/project-01/cover-03.jpg",
-            alt: "Project image",
-            width: 16,
-            height: 9,
-          },
-        ],
+        images: [],
       },
       {
-        title: "Next.js",
-        description: (
-          <>Building next gen apps with Next.js + Once UI + Supabase.</>
-        ),
+        title: "Veri bilimi & derin öğrenme",
+        description: <>Makine öğrenmesi, istatistik, NLP ve biyoenformatik.</>,
         tags: [
-          {
-            name: "JavaScript",
-            icon: "javascript",
-          },
-          {
-            name: "Next.js",
-            icon: "nextjs",
-          },
-          {
-            name: "Supabase",
-            icon: "supabase",
-          },
+          { name: "Python" },
+          { name: "Machine Learning" },
+          { name: "Deep Learning" },
+          { name: "NLP" },
+          { name: "RAG" },
+          { name: "Statistics" },
+          { name: "Exploratory Data Analysis" },
+          { name: "Linear Regression" },
+          { name: "Logistic Regression" },
+          { name: "CNN" },
+          { name: "Reinforcement Learning" },
+          { name: "Biyoenformatik" },
         ],
-        // optional: leave the array empty if you don't want to display images
-        images: [
-          {
-            src: "/images/projects/project-01/cover-04.jpg",
-            alt: "Project image",
-            width: 16,
-            height: 9,
-          },
+        images: [],
+      },
+      {
+        title: "Yazılım & veritabanı",
+        description: <>Geliştirme, veritabanı ve versiyon kontrolü.</>,
+        tags: [
+          { name: "React.js", icon: "javascript" },
+          { name: "Django" },
+          { name: "Git", icon: "github" },
+          { name: "GitHub" },
+          { name: "PostgreSQL" },
+          { name: "SQL" },
+          { name: "Microsoft SQL Server" },
+          { name: "DBMS" },
         ],
+        images: [],
+      },
+      {
+        title: "DevOps & bulut",
+        description: <>Bulut, ECS ve pipeline araçları.</>,
+        tags: [
+          { name: "Apache Spark" },
+          { name: "Cloud Computing" },
+          { name: "ECS" },
+          { name: "Load Balancing" },
+          { name: "VPN" },
+        ],
+        images: [],
       },
     ],
   },
 };
 
-const blog: Blog = {
+const getAbout = (locale: Locale): About => ({
+  ...aboutBase,
+  label: stringsByLocale[locale].nav.about,
+  intro: {
+    display: true,
+    title: stringsByLocale[locale].introTitle,
+    description: stringsByLocale[locale].introDescription,
+  },
+  work: { ...aboutBase.work, title: stringsByLocale[locale].workTitle },
+  studies: { ...aboutBase.studies, title: stringsByLocale[locale].studiesTitle },
+  technical: { ...aboutBase.technical, title: stringsByLocale[locale].technicalTitle },
+});
+
+const blogBase = {
   path: "/blog",
-  label: "Blog",
   title: "Writing about design and tech...",
   description: `Read what ${person.name} has been up to recently`,
-  // Create new blog posts by adding a new .mdx file to app/blog/posts
-  // All posts will be listed on the /blog route
 };
 
-const work: Work = {
+const getBlog = (locale: Locale): Blog => ({
+  ...blogBase,
+  label: stringsByLocale[locale].nav.blog,
+});
+
+const workBase = {
   path: "/work",
-  label: "Work",
   title: `Projects – ${person.name}`,
   description: `Design and dev projects by ${person.name}`,
-  // Create new project pages by adding a new .mdx file to app/blog/posts
-  // All projects will be listed on the /home and /work routes
 };
 
-const gallery: Gallery = {
-  path: "/gallery",
-  label: "Gallery",
-  title: `Photo gallery – ${person.name}`,
-  description: `A photo collection by ${person.name}`,
-  // Images by https://lorant.one
-  // These are placeholder images, replace with your own
-  images: [
-    {
-      src: "/images/gallery/horizontal-1.jpg",
-      alt: "image",
-      orientation: "horizontal",
-    },
-    {
-      src: "/images/gallery/vertical-4.jpg",
-      alt: "image",
-      orientation: "vertical",
-    },
-    {
-      src: "/images/gallery/horizontal-3.jpg",
-      alt: "image",
-      orientation: "horizontal",
-    },
-    {
-      src: "/images/gallery/vertical-1.jpg",
-      alt: "image",
-      orientation: "vertical",
-    },
-    {
-      src: "/images/gallery/vertical-2.jpg",
-      alt: "image",
-      orientation: "vertical",
-    },
-    {
-      src: "/images/gallery/horizontal-2.jpg",
-      alt: "image",
-      orientation: "horizontal",
-    },
-    {
-      src: "/images/gallery/horizontal-4.jpg",
-      alt: "image",
-      orientation: "horizontal",
-    },
-    {
-      src: "/images/gallery/vertical-3.jpg",
-      alt: "image",
-      orientation: "vertical",
-    },
-  ],
+const getWork = (locale: Locale): Work => ({
+  ...workBase,
+  label: stringsByLocale[locale].nav.work,
+});
+
+const galleryBase = {
+  path: "/news",
+  title: `News – ${person.name}`,
+  description: `Tech news and updates`,
+  images: [] as { src: string; alt: string; orientation: "horizontal" | "vertical" }[],
 };
 
-export { person, social, newsletter, home, about, blog, work, gallery };
+const getGallery = (locale: Locale): Gallery => ({
+  ...galleryBase,
+  label: stringsByLocale[locale].nav.gallery,
+});
+
+function getContent(locale: Locale) {
+  return {
+    person,
+    social,
+    newsletter: getNewsletter(locale),
+    home: getHome(locale),
+    about: getAbout(locale),
+    blog: getBlog(locale),
+    work: getWork(locale),
+    gallery: getGallery(locale),
+    techNewsTitle: stringsByLocale[locale].techNewsTitle,
+  };
+}
+
+const newsletter = getNewsletter("en");
+const home = getHome("en");
+const about = getAbout("en");
+const blog = getBlog("en");
+const work = getWork("en");
+const gallery = getGallery("en");
+
+export { person, social, newsletter, home, about, blog, work, gallery, getContent };

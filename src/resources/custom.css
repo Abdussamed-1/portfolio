@@ -67,3 +67,47 @@
   --scheme-neutral-600-50: rgba(137,152,159,0.5);
   /*
 }*/
+
+/* Arka plan rengi – fare ile dinamik efekt için taban renk */
+[data-theme="dark"] {
+  --page-background: #0f1419;
+}
+
+[data-theme="light"] {
+  --page-background: #f0f2f5;
+}
+
+/* Mobil (touch): yumuşak geçişli dinamik akış */
+@media (pointer: coarse) {
+  .mobile-background-flow {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse 100% 70% at 50% 50%,
+      var(--color-accent-background-strong, rgba(0, 120, 255, 0.35)) 0%,
+      transparent 50%
+    );
+    animation: mobileFlow 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+}
+
+@keyframes mobileFlow {
+  0%, 100% {
+    opacity: 0.65;
+    transform: scale(1) translate(0, 0);
+  }
+  25% {
+    opacity: 0.9;
+    transform: scale(1.15) translate(5%, -3%);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05) translate(-4%, 5%);
+  }
+  75% {
+    opacity: 0.85;
+    transform: scale(1.12) translate(-2%, -2%);
+  }
+}

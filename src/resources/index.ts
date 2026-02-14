@@ -8,7 +8,9 @@ export {
   blog,
   work,
   gallery,
+  getContent,
 } from "./content";
+export type { Locale } from "@/resources/translations";
 
 export {
   display,
@@ -23,4 +25,5 @@ export {
   socialSharing,
   effects,
   dataStyle,
+  techNewsFeeds,
 } from "./once-ui.config";

@@ -3,20 +3,19 @@ import "@once-ui-system/core/css/tokens.css";
 import "@/resources/custom.css";
 
 import classNames from "classnames";
+import { cookies } from "next/headers";
 
-import {
-  Background,
-  Column,
-  Flex,
-  Meta,
-  opacity,
-  RevealFx,
-  SpacingToken,
-} from "@once-ui-system/core";
+import { Column, Flex, Meta } from "@once-ui-system/core";
+import BackgroundWithMobileFlow from "@/components/BackgroundWithMobileFlow";
 import { Footer, Header, RouteGuard, Providers } from "@/components";
-import { baseURL, effects, fonts, style, dataStyle, home } from "@/resources";
+import { LocaleProvider } from "@/contexts/LocaleContext";
+import { baseURL, effects, fonts, getContent, style, dataStyle } from "@/resources";
+import type { Locale } from "@/resources/translations";
 
 export async function generateMetadata() {
+  const cookieStore = await cookies();
+  const locale = (cookieStore.get("locale")?.value === "tr" ? "tr" : "en") as Locale;
+  const { home } = getContent(locale);
   return Meta.generate({
     title: home.title,
     description: home.description,
@@ -31,11 +30,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const locale = (cookieStore.get("locale")?.value === "tr" ? "tr" : "en") as Locale;
+
   return (
     <Flex
       suppressHydrationWarning
       as="html"
-      lang="en"
+      lang={locale}
       fillWidth
       className={classNames(
         fonts.heading.variable,
@@ -103,8 +105,9 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <Providers>
-        <Column
+      <LocaleProvider initialLocale={locale}>
+        <Providers>
+          <Column
           as="body"
           background="page"
           fillWidth
@@ -113,48 +116,7 @@ export default async function RootLayout({
           padding="0"
           horizontal="center"
         >
-          <RevealFx fill position="absolute">
-            <Background
-              mask={{
-                x: effects.mask.x,
-                y: effects.mask.y,
-                radius: effects.mask.radius,
-                cursor: effects.mask.cursor,
-              }}
-              gradient={{
-                display: effects.gradient.display,
-                opacity: effects.gradient.opacity as opacity,
-                x: effects.gradient.x,
-                y: effects.gradient.y,
-                width: effects.gradient.width,
-                height: effects.gradient.height,
-                tilt: effects.gradient.tilt,
-                colorStart: effects.gradient.colorStart,
-                colorEnd: effects.gradient.colorEnd,
-              }}
-              dots={{
-                display: effects.dots.display,
-                opacity: effects.dots.opacity as opacity,
-                size: effects.dots.size as SpacingToken,
-                color: effects.dots.color,
-              }}
-              grid={{
-                display: effects.grid.display,
-                opacity: effects.grid.opacity as opacity,
-                color: effects.grid.color,
-                width: effects.grid.width,
-                height: effects.grid.height,
-              }}
-              lines={{
-                display: effects.lines.display,
-                opacity: effects.lines.opacity as opacity,
-                size: effects.lines.size as SpacingToken,
-                thickness: effects.lines.thickness,
-                angle: effects.lines.angle,
-                color: effects.lines.color,
-              }}
-            />
-          </RevealFx>
+          <BackgroundWithMobileFlow effects={effects} />
           <Flex fillWidth minHeight="16" s={{ hide: true }} />
           <Header />
           <Flex zIndex={0} fillWidth padding="l" horizontal="center" flex={1}>
@@ -165,6 +127,7 @@ export default async function RootLayout({
           <Footer />
         </Column>
       </Providers>
+      </LocaleProvider>
     </Flex>
   );
 }

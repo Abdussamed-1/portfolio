@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 
 import { Fade, Flex, Line, Row, ToggleButton } from "@once-ui-system/core";
 
-import { routes, display, person, about, blog, work, gallery } from "@/resources";
+import { useLocale } from "@/contexts/LocaleContext";
+import { routes, display, person, getContent } from "@/resources";
 import { ThemeToggle } from "./ThemeToggle";
+import { LanguageToggle } from "./LanguageToggle";
 import styles from "./Header.module.scss";
 
 type TimeDisplayProps = {
@@ -44,6 +46,8 @@ export default TimeDisplay;
 
 export const Header = () => {
   const pathname = usePathname() ?? "";
+  const locale = useLocale();
+  const { about, blog, work, gallery } = getContent(locale);
 
   return (
     <>
@@ -147,25 +151,27 @@ export const Header = () => {
                   </Row>
                 </>
               )}
-              {routes["/gallery"] && (
+              {routes["/news"] && (
                 <>
                   <Row s={{ hide: true }}>
                     <ToggleButton
                       prefixIcon="gallery"
-                      href="/gallery"
+                      href="/news"
                       label={gallery.label}
-                      selected={pathname.startsWith("/gallery")}
+                      selected={pathname.startsWith("/news")}
                     />
                   </Row>
                   <Row hide s={{ hide: false }}>
                     <ToggleButton
                       prefixIcon="gallery"
-                      href="/gallery"
-                      selected={pathname.startsWith("/gallery")}
+                      href="/news"
+                      selected={pathname.startsWith("/news")}
                     />
                   </Row>
                 </>
               )}
+              <Line background="neutral-alpha-medium" vert maxHeight="24" />
+              <LanguageToggle />
               {display.themeSwitcher && (
                 <>
                   <Line background="neutral-alpha-medium" vert maxHeight="24" />

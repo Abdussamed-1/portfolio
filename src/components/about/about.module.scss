@@ -1,11 +1,99 @@
 @use "../breakpoints.scss" as breakpoints;
 
+.avatar {
+  img {
+    object-fit: contain;
+    object-position: center;
+  }
+}
+
 .hover {
     transition: var(--transition-micro-medium);
 
     &:hover {
         transform: translateX(var(--static-space-4));
     }
+}
+
+/* Ortak kart stili – Work, Studies, Technical */
+.workList,
+.studiesList,
+.technicalList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--static-space-20);
+}
+
+.workCard,
+.studyCard,
+.technicalCard {
+  padding: var(--static-space-20);
+  border-radius: var(--static-radius-l);
+  border: 1px solid var(--color-neutral-border-medium, rgba(0, 0, 0, 0.12));
+  background: var(--color-neutral-alpha-weak, rgba(0, 0, 0, 0.02));
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: var(--color-neutral-border-strong, rgba(0, 0, 0, 0.18));
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  }
+}
+
+.workCardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--static-space-8);
+  margin-bottom: var(--static-space-4);
+}
+
+.workCompany {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.workTimeframe {
+  flex-shrink: 0;
+  color: var(--color-neutral-weak);
+  font-size: 0.875rem;
+}
+
+.workRole {
+  margin-bottom: var(--static-space-12);
+  font-size: 0.9375rem;
+  color: var(--color-brand-weak, var(--color-neutral-weak));
+}
+
+.workAchievements {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: var(--font-size-body-default-m, 1rem);
+  color: var(--color-neutral-strong);
+
+  li {
+    position: relative;
+    padding-left: var(--static-space-20);
+    margin-bottom: var(--static-space-8);
+    line-height: 1.55;
+
+    &::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--color-brand-medium, var(--color-neutral-medium));
+      font-weight: 600;
+    }
+
+    a {
+      color: var(--color-brand-strong);
+      text-decoration: none;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
 }
 
 @media (max-width: breakpoints.$s) {
@@ -15,5 +103,10 @@
 
     .blockAlign {
         align-self: center;
+    }
+
+    .workCardHeader {
+      flex-direction: column;
+      align-items: flex-start;
     }
 }

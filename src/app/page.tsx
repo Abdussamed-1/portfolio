@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import {
   Heading,
   Text,
@@ -11,12 +12,16 @@ import {
   Meta,
   Line,
 } from "@once-ui-system/core";
-import { home, about, person, baseURL, routes } from "@/resources";
+import { getContent, baseURL, routes } from "@/resources";
+import type { Locale } from "@/resources/translations";
 import { Mailchimp } from "@/components";
 import { Projects } from "@/components/work/Projects";
 import { Posts } from "@/components/blog/Posts";
 
 export async function generateMetadata() {
+  const cookieStore = await cookies();
+  const locale = (cookieStore.get("locale")?.value === "tr" ? "tr" : "en") as Locale;
+  const { home } = getContent(locale);
   return Meta.generate({
     title: home.title,
     description: home.description,
@@ -26,7 +31,11 @@ export async function generateMetadata() {
   });
 }
 
-export default function Home() {
+export default async function Home() {
+  const cookieStore = await cookies();
+  const locale = (cookieStore.get("locale")?.value === "tr" ? "tr" : "en") as Locale;
+  const { home, about, person } = getContent(locale);
+
   return (
     <Column maxWidth="m" gap="xl" paddingY="12" horizontal="center">
       <Schema
