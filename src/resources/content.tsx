@@ -59,7 +59,7 @@ const social: Social = [
 
 const homeBase: Omit<Home, "label" | "headline" | "subline"> = {
   path: "/",
-  image: "/images/og/home.jpg",
+  image: `/api/og/generate?title=${encodeURIComponent(`${person.name}'s Portfolio`)}&subtitle=${encodeURIComponent(person.role)}`,
   title: `${person.name}'s Portfolio`,
   description: `Portfolio website showcasing my work as a ${person.role}`,
   featured: {

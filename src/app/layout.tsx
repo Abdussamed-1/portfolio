@@ -17,13 +17,22 @@ export async function generateMetadata() {
   const cookieStore = await cookies();
   const locale = (cookieStore.get("locale")?.value === "tr" ? "tr" : "en") as Locale;
   const { home } = getContent(locale);
-  return Meta.generate({
+  const metadata = Meta.generate({
     title: home.title,
     description: home.description,
     baseURL: baseURL,
     path: home.path,
     image: home.image,
   });
+  
+  // Add siteName for og:site_name
+  return {
+    ...metadata,
+    openGraph: {
+      ...metadata.openGraph,
+      siteName: person.name,
+    },
+  };
 }
 
 export default async function RootLayout({
