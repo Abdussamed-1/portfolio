@@ -2,18 +2,38 @@ import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { baseURL, person } from "@/resources";
 
-export const runtime = "edge";
+// Node.js runtime kullan (Edge runtime'da image fetch sorunları olabiliyor)
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const requestUrl = new URL(request.url);
+    const { searchParams } = requestUrl;
     const title = searchParams.get("title") || person.name;
     const subtitle = searchParams.get("subtitle") || person.role;
 
+    // Base URL'i request'ten al (Vercel'de otomatik olarak doğru URL'i verir)
+    const origin = requestUrl.origin;
+    
     // Avatar URL'ini absolute URL'e çevir
     const avatarUrl = person.avatar.startsWith("http")
       ? person.avatar
-      : `${baseURL}${person.avatar}`;
+      : `${origin}${person.avatar}`;
+
+    // Avatar'ı fetch et ve base64'e çevir (Node.js runtime'da Buffer kullanabiliriz)
+    let avatarDataUrl = avatarUrl;
+    try {
+      const avatarResponse = await fetch(avatarUrl);
+      if (avatarResponse.ok) {
+        const avatarBuffer = await avatarResponse.arrayBuffer();
+        const avatarBase64 = Buffer.from(avatarBuffer).toString('base64');
+        const contentType = avatarResponse.headers.get('content-type') || 'image/png';
+        avatarDataUrl = `data:${contentType};base64,${avatarBase64}`;
+      }
+    } catch (fetchError) {
+      console.error("Failed to fetch avatar, using URL directly:", fetchError);
+      // Fallback to URL if fetch fails
+    }
 
     return new ImageResponse(
       (
@@ -40,7 +60,7 @@ export async function GET(request: NextRequest) {
             }}
           >
             <img
-              src={avatarUrl}
+              src={avatarDataUrl}
               alt={person.name}
               width={120}
               height={120}
@@ -100,7 +120,7 @@ export async function GET(request: NextRequest) {
             }}
           >
             <img
-              src={avatarUrl}
+              src={avatarDataUrl}
               alt={person.name}
               width={32}
               height={32}
