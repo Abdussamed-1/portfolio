@@ -8,7 +8,7 @@ const person: Person = {
   lastName: "Erkalp",
   name: "Samet Erkalp",
   role: "AI & Data Science Engineer",
-  avatar: "/favicon-source.png",
+  avatar: "/images/og/avatar.png",
   email: "abdulsamet@chinarqai.com",
   location: "Europe/Istanbul",
   locationLabel: "Istanbul, Europe",

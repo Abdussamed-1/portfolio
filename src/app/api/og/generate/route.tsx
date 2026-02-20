@@ -1,118 +1,131 @@
 import { ImageResponse } from "next/og";
+import { NextRequest } from "next/server";
 import { baseURL, person } from "@/resources";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
-export async function GET(request: Request) {
-  let url = new URL(request.url);
-  let title = url.searchParams.get("title") || "Portfolio";
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const title = searchParams.get("title") || person.name;
+    const subtitle = searchParams.get("subtitle") || person.role;
 
-  async function loadGoogleFont(font: string) {
-    const url = `https://fonts.googleapis.com/css2?family=${font}`;
-    const css = await (await fetch(url)).text();
-    const resource = css.match(/src: url\((.+)\) format\('(opentype|truetype)'\)/);
+    // Avatar URL'ini absolute URL'e çevir
+    const avatarUrl = person.avatar.startsWith("http")
+      ? person.avatar
+      : `${baseURL}${person.avatar}`;
 
-    if (resource) {
-      const response = await fetch(resource[1]);
-      if (response.status == 200) {
-        return await response.arrayBuffer();
-      }
-    }
-
-    throw new Error("failed to load font data");
-  }
-
-  return new ImageResponse(
-    <div
-      style={{
-        display: "flex",
-        width: "100%",
-        height: "100%",
-        padding: "6rem",
-        background: "#151515",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          gap: "4rem",
-          fontStyle: "normal",
-          color: "white",
-        }}
-      >
-        <span
-          style={{
-            padding: "1rem",
-            fontSize: "6rem",
-            lineHeight: "8rem",
-            letterSpacing: "-0.05em",
-            whiteSpace: "wrap",
-            textWrap: "balance",
-            overflow: "hidden",
-          }}
-        >
-          {title}
-        </span>
+    return new ImageResponse(
+      (
         <div
           style={{
+            height: "100%",
+            width: "100%",
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            gap: "5rem",
+            justifyContent: "center",
+            backgroundColor: "#0a0a0a",
+            backgroundImage: "linear-gradient(to bottom, #1a1a1a, #0a0a0a)",
+            fontFamily: "system-ui, -apple-system, sans-serif",
           }}
         >
-          <img
-            src={baseURL + person.avatar}
+          {/* Avatar */}
+          <div
             style={{
-              width: "12rem",
-              height: "12rem",
-              objectFit: "cover",
-              borderRadius: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 40,
             }}
-          />
+          >
+            <img
+              src={avatarUrl}
+              alt={person.name}
+              width={120}
+              height={120}
+              style={{
+                borderRadius: "50%",
+                border: "4px solid #ffffff",
+              }}
+            />
+          </div>
+
+          {/* Title */}
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: "0.75rem",
+              alignItems: "center",
+              justifyContent: "center",
+              maxWidth: "900px",
+              padding: "0 40px",
             }}
           >
+            <h1
+              style={{
+                fontSize: 64,
+                fontWeight: "bold",
+                color: "#ffffff",
+                textAlign: "center",
+                margin: 0,
+                marginBottom: 16,
+                lineHeight: 1.2,
+              }}
+            >
+              {title}
+            </h1>
+            {subtitle && (
+              <p
+                style={{
+                  fontSize: 32,
+                  color: "#a0a0a0",
+                  textAlign: "center",
+                  margin: 0,
+                }}
+              >
+                {subtitle}
+              </p>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 40,
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <img
+              src={avatarUrl}
+              alt={person.name}
+              width={32}
+              height={32}
+              style={{
+                borderRadius: "50%",
+              }}
+            />
             <span
               style={{
-                fontSize: "4.5rem",
-                lineHeight: "4.5rem",
-                whiteSpace: "pre-wrap",
-                textWrap: "balance",
+                fontSize: 24,
+                color: "#808080",
               }}
             >
               {person.name}
             </span>
-            <span
-              style={{
-                fontSize: "2.5rem",
-                lineHeight: "2.5rem",
-                whiteSpace: "pre-wrap",
-                textWrap: "balance",
-                opacity: "0.6",
-              }}
-            >
-              {person.role}
-            </span>
           </div>
         </div>
-      </div>
-    </div>,
-    {
-      width: 1280,
-      height: 720,
-      fonts: [
-        {
-          name: "Geist",
-          data: await loadGoogleFont("Geist:wght@400"),
-          style: "normal",
-        },
-      ],
-    },
-  );
+      ),
+      {
+        width: 1200,
+        height: 630,
+      }
+    );
+  } catch (error) {
+    console.error("OG image generation error:", error);
+    return new Response("Failed to generate image", { status: 500 });
+  }
 }

@@ -61,6 +61,11 @@ const nextConfig = {
     ];
   },
   compress: true,
+  experimental: {
+    turbopack: {
+      root: process.cwd(),
+    },
+  },
 };
 
 export default withMDX(nextConfig);
