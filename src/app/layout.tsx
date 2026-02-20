@@ -9,7 +9,7 @@ import { Column, Flex, Meta } from "@once-ui-system/core";
 import BackgroundWithMobileFlow from "@/components/BackgroundWithMobileFlow";
 import { Footer, Header, RouteGuard, Providers } from "@/components";
 import { LocaleProvider } from "@/contexts/LocaleContext";
-import { baseURL, effects, fonts, getContent, style, dataStyle } from "@/resources";
+import { baseURL, effects, fonts, getContent, style, dataStyle, person, social } from "@/resources";
 import type { Locale } from "@/resources/translations";
 
 export async function generateMetadata() {
@@ -47,6 +47,53 @@ export default async function RootLayout({
       )}
     >
       <head>
+        {/* JSON-LD Structured Data: Person */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Person",
+              name: person.name,
+              givenName: person.firstName,
+              familyName: person.lastName,
+              jobTitle: person.role,
+              email: person.email,
+              image: `${baseURL}${person.avatar}`,
+              url: baseURL,
+              sameAs: social
+                .filter((s) => s.link && !s.link.startsWith("mailto:"))
+                .map((s) => s.link),
+              address: {
+                "@type": "PostalAddress",
+                addressLocality: person.locationLabel,
+              },
+              knowsLanguage: person.languages,
+            }),
+          }}
+        />
+        {/* JSON-LD Structured Data: Organization/Website */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: `${person.name} - Portfolio`,
+              description: `Portfolio website of ${person.name}, ${person.role}`,
+              url: baseURL,
+              author: {
+                "@type": "Person",
+                name: person.name,
+              },
+              inLanguage: [locale, locale === "en" ? "tr" : "en"],
+            }),
+          }}
+        />
+        {/* hreflang tags for EN/TR */}
+        <link rel="alternate" hrefLang="en" href={baseURL} />
+        <link rel="alternate" hrefLang="tr" href={`${baseURL}?locale=tr`} />
+        <link rel="alternate" hrefLang="x-default" href={baseURL} />
         <script
           id="theme-init"
           dangerouslySetInnerHTML={{

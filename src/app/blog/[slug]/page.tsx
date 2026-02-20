@@ -17,6 +17,7 @@ import {
 import { baseURL, about, blog, person } from "@/resources";
 import { formatDate } from "@/utils/formatDate";
 import { getPosts } from "@/utils/utils";
+import { calculateReadingTime } from "@/utils/readingTime";
 import { Metadata } from "next";
 import React from "react";
 import { Posts } from "@/components/blog/Posts";
@@ -44,13 +45,25 @@ export async function generateMetadata({
 
   if (!post) return {};
 
-  return Meta.generate({
+  const postUrl = `${baseURL}${blog.path}/${post.slug}`;
+  const baseMetadata = Meta.generate({
     title: post.metadata.title,
     description: post.metadata.summary,
     baseURL: baseURL,
     image: post.metadata.image || `/api/og/generate?title=${post.metadata.title}`,
     path: `${blog.path}/${post.slug}`,
   });
+  
+  return {
+    ...baseMetadata,
+    alternates: {
+      canonical: postUrl,
+      languages: {
+        en: postUrl,
+        tr: `${postUrl}?locale=tr`,
+      },
+    },
+  };
 }
 
 export default async function Blog({ params }: { params: Promise<{ slug: string | string[] }> }) {
@@ -93,13 +106,53 @@ export default async function Blog({ params }: { params: Promise<{ slug: string 
               image: `${baseURL}${person.avatar}`,
             }}
           />
+          {/* Breadcrumbs JSON-LD */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "BreadcrumbList",
+                itemListElement: [
+                  {
+                    "@type": "ListItem",
+                    position: 1,
+                    name: "Home",
+                    item: baseURL,
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: "Blog",
+                    item: `${baseURL}/blog`,
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 3,
+                    name: post.metadata.title,
+                    item: `${baseURL}/blog/${post.slug}`,
+                  },
+                ],
+              }),
+            }}
+          />
           <Column maxWidth="s" gap="16" horizontal="center" align="center">
             <SmartLink href="/blog">
               <Text variant="label-strong-m">Blog</Text>
             </SmartLink>
-            <Text variant="body-default-xs" onBackground="neutral-weak" marginBottom="12">
-              {post.metadata.publishedAt && formatDate(post.metadata.publishedAt)}
-            </Text>
+            <Row gap="12" vertical="center" marginBottom="12">
+              <Text variant="body-default-xs" onBackground="neutral-weak">
+                {post.metadata.publishedAt && formatDate(post.metadata.publishedAt)}
+              </Text>
+              {post.content && (
+                <>
+                  <Text variant="body-default-xs" onBackground="neutral-weak">•</Text>
+                  <Text variant="body-default-xs" onBackground="neutral-weak">
+                    {calculateReadingTime(post.content)} min read
+                  </Text>
+                </>
+              )}
+            </Row>
             <Heading variant="display-strong-m">{post.metadata.title}</Heading>
             {post.metadata.subtitle && (
               <Text 

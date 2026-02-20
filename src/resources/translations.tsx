@@ -48,11 +48,11 @@ export const stringsByLocale: Record<
     technicalTitle: "Technical skills",
     featuredWork: "Featured",
     workLabel: "Work",
-    headline: <>From data to decisions</>,
+    headline: <>Where Data Meets Intelligence</>,
     subline: (
       <>
-        I&apos;m Samet — I work at the intersection of <Text as="span" size="xl" weight="strong">AI</Text>, data science and bioinformatics, <br />
-        building software and computational solutions for real-world problems. I&apos;m also exploring quantum computing.
+        I&apos;m Samet — Transforming complex data into actionable insights at the intersection of <Text as="span" size="xl" weight="strong">AI</Text>, data science, and bioinformatics. <br />
+        I build software that solves real problems, explore quantum computing, and turn research into production-ready systems.
       </>
     ),
     newsletterTitle: "Subscribe to Samet's Newsletter",
@@ -87,11 +87,11 @@ export const stringsByLocale: Record<
     technicalTitle: "Teknik beceriler",
     featuredWork: "Öne çıkan",
     workLabel: "İş",
-    headline: <>Veriden karara</>,
+    headline: <>Veri ve Zekânın Buluştuğu Yer</>,
     subline: (
       <>
-        Ben Samet — <Text as="span" size="xl" weight="strong">Yapay zeka</Text>, veri bilimi ve biyoinformatik kesişiminde çalışıyorum; <br />
-        gerçek dünya problemleri için yazılım ve hesaplamalı çözümler geliştiriyorum. Kuantum hesaplama ile de ilgileniyorum.
+        Ben Samet — Karmaşık verileri eyleme dönüştürülebilir içgörülere çeviriyorum. <Text as="span" size="xl" weight="strong">Yapay zeka</Text>, veri bilimi ve biyoinformatik kesişiminde çalışıyorum. <br />
+        Gerçek problemleri çözen yazılımlar geliştiriyor, kuantum hesaplamayı keşfediyor ve araştırmayı üretime hazır sistemlere dönüştürüyorum.
       </>
     ),
     newsletterTitle: "Samet'in bültenine abone ol",
