@@ -6,6 +6,7 @@ import classNames from "classnames";
 import { cookies } from "next/headers";
 
 import { Column, Flex, Meta } from "@once-ui-system/core";
+import { Analytics } from "@vercel/analytics/react";
 import BackgroundWithMobileFlow from "@/components/BackgroundWithMobileFlow";
 import { Footer, Header, RouteGuard, Providers } from "@/components";
 import { LocaleProvider } from "@/contexts/LocaleContext";
@@ -174,6 +175,7 @@ export default async function RootLayout({
           <Footer />
         </Column>
       </Providers>
+      <Analytics />
       </LocaleProvider>
     </Flex>
   );
