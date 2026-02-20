@@ -48,11 +48,11 @@ export const stringsByLocale: Record<
     technicalTitle: "Technical skills",
     featuredWork: "Featured",
     workLabel: "Work",
-    headline: <>Where Data Meets Intelligence</>,
+    headline: <>Build. Optimize. Evolve.</>,
     subline: (
       <>
-        I&apos;m Samet — Transforming complex data into actionable insights at the intersection of <Text as="span" size="xl" weight="strong">AI</Text>, data science, and bioinformatics. <br />
-        I build software that solves real problems, explore quantum computing, and turn research into production-ready systems.
+        I&apos;m Samet — An <Text as="span" size="xl" weight="strong">AI & Data Science Engineer</Text> building intelligent systems at the intersection of machine learning, bioinformatics, and quantum computing. <br />
+        I transform complex data into scalable solutions, optimize algorithms for real-world impact, and evolve ideas from research to production.
       </>
     ),
     newsletterTitle: "Subscribe to Samet's Newsletter",
@@ -87,11 +87,11 @@ export const stringsByLocale: Record<
     technicalTitle: "Teknik beceriler",
     featuredWork: "Öne çıkan",
     workLabel: "İş",
-    headline: <>Veri ve Zekânın Buluştuğu Yer</>,
+    headline: <>İnşa Et. Optimize Et. Geliştir.</>,
     subline: (
       <>
-        Ben Samet — Karmaşık verileri eyleme dönüştürülebilir içgörülere çeviriyorum. <Text as="span" size="xl" weight="strong">Yapay zeka</Text>, veri bilimi ve biyoinformatik kesişiminde çalışıyorum. <br />
-        Gerçek problemleri çözen yazılımlar geliştiriyor, kuantum hesaplamayı keşfediyor ve araştırmayı üretime hazır sistemlere dönüştürüyorum.
+        Ben Samet — Makine öğrenmesi, biyoinformatik ve kuantum hesaplama kesişiminde akıllı sistemler geliştiren bir <Text as="span" size="xl" weight="strong">Yapay Zeka & Veri Bilimi Mühendisi</Text>. <br />
+        Karmaşık verileri ölçeklenebilir çözümlere dönüştürüyor, gerçek dünya etkisi için algoritmaları optimize ediyor ve fikirleri araştırmadan üretime taşıyorum.
       </>
     ),
     newsletterTitle: "Samet'in bültenine abone ol",
