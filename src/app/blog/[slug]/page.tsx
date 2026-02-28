@@ -1,5 +1,8 @@
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { CustomMDX, ScrollToHash } from "@/components";
+import { stringsByLocale } from "@/resources/translations";
+import type { Locale } from "@/resources/translations";
 import {
   Meta,
   Schema,
@@ -14,6 +17,7 @@ import {
   Media,
   Line,
 } from "@once-ui-system/core";
+import { getLocalizedMetadata, getContentLocaleForSlug, getTranslatedBlogSlug } from "@/lib/blog-translations";
 import { baseURL, about, blog, person } from "@/resources";
 import { formatDate } from "@/utils/formatDate";
 import { getPosts } from "@/utils/utils";
@@ -39,30 +43,57 @@ export async function generateMetadata({
   const slugPath = Array.isArray(routeParams.slug)
     ? routeParams.slug.join("/")
     : routeParams.slug || "";
+  const cookieStore = await cookies();
+  const locale: Locale = cookieStore.get("locale")?.value === "tr" ? "tr" : "en";
 
   const posts = getPosts(["src", "app", "blog", "posts"]);
   let post = posts.find((post) => post.slug === slugPath);
 
   if (!post) return {};
 
+  const contentLocale = getContentLocaleForSlug(slugPath) ?? locale;
+  const meta = getLocalizedMetadata(post.metadata, contentLocale);
   const postUrl = `${baseURL}${blog.path}/${post.slug}`;
+  const ogImage =
+    post.metadata.image?.startsWith("http") ?
+      post.metadata.image
+      : post.metadata.image
+        ? `${baseURL}${post.metadata.image.startsWith("/") ? "" : "/"}${post.metadata.image}`
+        : `/api/og/generate?title=${encodeURIComponent(meta.title)}`;
   const baseMetadata = Meta.generate({
-    title: post.metadata.title,
-    description: post.metadata.summary,
+    title: meta.title,
+    description: meta.summary,
     baseURL: baseURL,
-    image: post.metadata.image || `/api/og/generate?title=${post.metadata.title}`,
+    image: ogImage,
     path: `${blog.path}/${post.slug}`,
   });
-  
+
+  const ogLocale = contentLocale === "tr" ? "tr_TR" : "en_US";
+  const alternateLocale = contentLocale === "tr" ? "en_US" : "tr_TR";
+
   return {
     ...baseMetadata,
-    alternates: {
-      canonical: postUrl,
-      languages: {
-        en: postUrl,
-        tr: `${postUrl}?locale=tr`,
-      },
+    openGraph: {
+      ...baseMetadata.openGraph,
+      locale: ogLocale,
+      alternateLocale: [alternateLocale],
     },
+    keywords: [
+      meta.title,
+      meta.tag,
+      contentLocale === "en" ? "blog" : "yazılar",
+      person.name,
+    ].filter((x): x is string => typeof x === "string"),
+    alternates: (() => {
+      const enSlug = getTranslatedBlogSlug(slugPath, "en");
+      const trSlug = getTranslatedBlogSlug(slugPath, "tr");
+      const enUrl = enSlug ? `${baseURL}${blog.path}/${enSlug}` : postUrl;
+      const trUrl = trSlug ? `${baseURL}${blog.path}/${trSlug}` : `${postUrl}?locale=tr`;
+      return {
+        canonical: postUrl,
+        languages: { en: enUrl, tr: trUrl },
+      };
+    })(),
   };
 }
 
@@ -71,6 +102,8 @@ export default async function Blog({ params }: { params: Promise<{ slug: string 
   const slugPath = Array.isArray(routeParams.slug)
     ? routeParams.slug.join("/")
     : routeParams.slug || "";
+  const cookieStore = await cookies();
+  const locale: Locale = cookieStore.get("locale")?.value === "tr" ? "tr" : "en";
 
   let post = getPosts(["src", "app", "blog", "posts"]).find((post) => post.slug === slugPath);
 
@@ -78,6 +111,8 @@ export default async function Blog({ params }: { params: Promise<{ slug: string 
     notFound();
   }
 
+  const contentLocale = getContentLocaleForSlug(slugPath) ?? locale;
+  const meta = getLocalizedMetadata(post.metadata, contentLocale);
   const avatars =
     post.metadata.team?.map((person) => ({
       src: person.avatar,
@@ -92,18 +127,48 @@ export default async function Blog({ params }: { params: Promise<{ slug: string 
             as="blogPosting"
             baseURL={baseURL}
             path={`${blog.path}/${post.slug}`}
-            title={post.metadata.title}
-            description={post.metadata.summary}
+            title={meta.title}
+            description={meta.summary}
             datePublished={post.metadata.publishedAt}
             dateModified={post.metadata.publishedAt}
             image={
-              post.metadata.image ||
-              `/api/og/generate?title=${encodeURIComponent(post.metadata.title)}`
+              post.metadata.image
+                ? post.metadata.image.startsWith("http")
+                  ? post.metadata.image
+                  : `${baseURL}${post.metadata.image.startsWith("/") ? "" : "/"}${post.metadata.image}`
+                : `/api/og/generate?title=${encodeURIComponent(meta.title)}`
             }
             author={{
               name: person.name,
               url: `${baseURL}${about.path}`,
               image: `${baseURL}${person.avatar}`,
+            }}
+          />
+          {/* BlogPosting with inLanguage for SEO (EN/TR content) */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "BlogPosting",
+                headline: meta.title,
+                description: meta.summary,
+                inLanguage: contentLocale === "tr" ? "tr" : "en",
+                url: `${baseURL}${blog.path}/${post.slug}`,
+                datePublished: post.metadata.publishedAt,
+                dateModified: post.metadata.publishedAt,
+                image: post.metadata.image
+                  ? (post.metadata.image.startsWith("http")
+                      ? post.metadata.image
+                      : `${baseURL}${post.metadata.image.startsWith("/") ? "" : "/"}${post.metadata.image}`)
+                  : `${baseURL}/api/og/generate?title=${encodeURIComponent(meta.title)}`,
+                author: {
+                  "@type": "Person",
+                  name: person.name,
+                  url: `${baseURL}${about.path}`,
+                  image: `${baseURL}${person.avatar}`,
+                },
+              }),
             }}
           />
           {/* Breadcrumbs JSON-LD */}
@@ -129,7 +194,7 @@ export default async function Blog({ params }: { params: Promise<{ slug: string 
                   {
                     "@type": "ListItem",
                     position: 3,
-                    name: post.metadata.title,
+                    name: meta.title,
                     item: `${baseURL}/blog/${post.slug}`,
                   },
                 ],
@@ -153,15 +218,15 @@ export default async function Blog({ params }: { params: Promise<{ slug: string 
                 </>
               )}
             </Row>
-            <Heading variant="display-strong-m">{post.metadata.title}</Heading>
-            {post.metadata.subtitle && (
+            <Heading variant="display-strong-m">{meta.title}</Heading>
+            {meta.subtitle && (
               <Text 
                 variant="body-default-l" 
                 onBackground="neutral-weak" 
                 align="center"
                 style={{ fontStyle: 'italic' }}
               >
-                {post.metadata.subtitle}
+                {meta.subtitle}
               </Text>
             )}
           </Column>
@@ -176,9 +241,10 @@ export default async function Blog({ params }: { params: Promise<{ slug: string 
           {post.metadata.image && (
             <Media
               src={post.metadata.image}
-              alt={post.metadata.title}
+              alt={meta.title}
               aspectRatio="16/9"
               priority
+              unoptimized={!post.metadata.image.startsWith("http")}
               sizes="(min-width: 768px) 100vw, 768px"
               border="neutral-alpha-weak"
               radius="l"
@@ -187,20 +253,37 @@ export default async function Blog({ params }: { params: Promise<{ slug: string 
             />
           )}
           <Column as="article" maxWidth="s">
-            <CustomMDX source={post.content} />
+            {meta.intro != null && meta.link ? (
+              <>
+                <Text
+                  variant="body-default-m"
+                  onBackground="neutral-medium"
+                  style={{ lineHeight: "175%" }}
+                  marginTop="8"
+                  marginBottom="12"
+                >
+                  {meta.intro}
+                </Text>
+                <SmartLink href={meta.link} suffixIcon="arrowUpRightFromSquare">
+                  {meta.readMoreText ?? (locale === "tr" ? "Makalenin tamamını Medium'da oku" : "Read the full article on Medium")}
+                </SmartLink>
+              </>
+            ) : (
+              <CustomMDX source={post.content} />
+            )}
           </Column>
           
           <ShareSection 
-            title={post.metadata.title} 
+            title={meta.title} 
             url={`${baseURL}${blog.path}/${post.slug}`} 
           />
 
           <Column fillWidth gap="40" horizontal="center" marginTop="40">
             <Line maxWidth="40" />
             <Text as="h2" id="recent-posts" variant="heading-strong-xl" marginBottom="24">
-              Recent posts
+              {stringsByLocale[locale].recentPosts}
             </Text>
-            <Posts exclude={[post.slug]} range={[1, 2]} columns="2" thumbnail direction="column" />
+            <Posts exclude={[post.slug]} range={[1, 2]} columns="2" thumbnail direction="column" locale={locale} />
           </Column>
           <ScrollToHash />
         </Column>

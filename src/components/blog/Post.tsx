@@ -28,6 +28,7 @@ export default function Post({ post, thumbnail, direction }: PostProps) {
       {post.metadata.image && thumbnail && (
         <Media
           priority
+          unoptimized={!post.metadata.image.startsWith("http")}
           sizes="(max-width: 768px) 100vw, 640px"
           border="neutral-alpha-weak"
           cursor="interactive"
