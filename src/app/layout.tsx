@@ -5,8 +5,9 @@ import "@/resources/custom.css";
 import classNames from "classnames";
 import { cookies } from "next/headers";
 
-import { Column, Flex, Meta } from "@once-ui-system/core";
+import { Column, Flex, Meta, Row, Text } from "@once-ui-system/core";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import BackgroundWithMobileFlow from "@/components/BackgroundWithMobileFlow";
 import { Footer, Header, RouteGuard, Providers } from "@/components";
 import { LocaleProvider } from "@/contexts/LocaleContext";
@@ -59,6 +60,9 @@ export async function generateMetadata() {
     },
   };
 }
+
+const isProduction = process.env.VERCEL_ENV === "production";
+const isPreview = process.env.VERCEL_ENV === "preview";
 
 export default async function RootLayout({
   children,
@@ -198,8 +202,28 @@ export default async function RootLayout({
           padding="0"
           horizontal="center"
         >
+          {isPreview && (
+            <Row
+              as="div"
+              position="fixed"
+              top="0"
+              left="0"
+              right="0"
+              zIndex={10}
+              horizontal="center"
+              paddingY="8"
+              paddingX="16"
+              background="brand-alpha-strong"
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
+            >
+              <Text variant="label-strong-s" onBackground="neutral-strong">
+                Preview – not production
+              </Text>
+            </Row>
+          )}
           <BackgroundWithMobileFlow effects={effects} />
           <Flex fillWidth minHeight="16" s={{ hide: true }} />
+          {isPreview && <Flex fillWidth minHeight="40" />}
           <Header />
           <Flex zIndex={0} fillWidth padding="l" horizontal="center" flex={1}>
             <Flex horizontal="center" fillWidth minHeight="0">
@@ -209,7 +233,12 @@ export default async function RootLayout({
           <Footer />
         </Column>
       </Providers>
-      <Analytics />
+      {isProduction && (
+        <>
+          <Analytics />
+          <SpeedInsights />
+        </>
+      )}
       </LocaleProvider>
     </Flex>
   );
