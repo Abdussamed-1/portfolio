@@ -61,7 +61,7 @@ const homeBase: Omit<Home, "label" | "headline" | "subline"> = {
   path: "/",
   image: `/api/og/generate?title=${encodeURIComponent(`${person.name}'s Portfolio`)}&subtitle=${encodeURIComponent(person.role)}`,
   title: `${person.name}'s Portfolio`,
-  description: `Portfolio website showcasing my work as a ${person.role}`,
+  description: `${person.name} — ${person.role}. Portfolio, projects, and blog on AI, data science, and software.`,
   featured: {
     display: true,
     href: "/work/building-once-ui-a-customizable-design-system",
@@ -92,7 +92,7 @@ const getHome = (locale: Locale): Home => ({
 const aboutBase: Omit<About, "label" | "intro"> = {
   path: "/about",
   title: `About – ${person.name}`,
-  description: `Meet ${person.name}, ${person.role} from ${person.location}`,
+  description: `About ${person.name}, ${person.role}. Experience, skills, and background. Based in ${person.locationLabel}.`,
   tableOfContent: {
     display: true,
     subItems: false,
@@ -286,19 +286,19 @@ const getAbout = (locale: Locale): About => ({
 
 const blogBase = {
   path: "/blog",
-  title: "Writing about design and tech...",
-  description: `Read what ${person.name} has been up to recently`,
 };
 
 const getBlog = (locale: Locale): Blog => ({
   ...blogBase,
   label: stringsByLocale[locale].nav.blog,
+  title: stringsByLocale[locale].blogPageTitle,
+  description: stringsByLocale[locale].blogPageDescription,
 });
 
 const workBase = {
   path: "/work",
   title: `Projects – ${person.name}`,
-  description: `Design and dev projects by ${person.name}`,
+  description: `Projects and case studies by ${person.name}. AI, data science, design systems, and software development.`,
 };
 
 const getWork = (locale: Locale): Work => ({

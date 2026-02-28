@@ -23,13 +23,17 @@ export async function generateMetadata() {
   const cookieStore = await cookies();
   const locale = (cookieStore.get("locale")?.value === "tr" ? "tr" : "en") as Locale;
   const { about } = getContent(locale);
-  return Meta.generate({
-    title: about.title,
-    description: about.description,
-    baseURL: baseURL,
-    image: `/api/og/generate?title=${encodeURIComponent(about.title)}`,
-    path: about.path,
-  });
+  const canonical = `${baseURL}${about.path}`;
+  return {
+    ...Meta.generate({
+      title: about.title,
+      description: about.description,
+      baseURL: baseURL,
+      image: `/api/og/generate?title=${encodeURIComponent(about.title)}`,
+      path: about.path,
+    }),
+    alternates: { canonical, languages: { en: canonical, "x-default": canonical } },
+  };
 }
 
 export default async function About() {

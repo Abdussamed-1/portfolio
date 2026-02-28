@@ -24,6 +24,10 @@ export const stringsByLocale: Record<
     readCaseStudy: string;
     viewProject: string;
     contributorsTitle: string;
+    blogPageTitle: string;
+    blogPageDescription: string;
+    earlierPosts: string;
+    recentPosts: string;
   }
 > = {
   en: {
@@ -64,6 +68,10 @@ export const stringsByLocale: Record<
     readCaseStudy: "Read case study",
     viewProject: "View project",
     contributorsTitle: "Contributors",
+    blogPageTitle: "Blog",
+    blogPageDescription: "Blog by Samet Erkalp: AI, data science, cybersecurity, Kubernetes, and tech. Tutorials and articles.",
+    earlierPosts: "Earlier posts",
+    recentPosts: "Recent posts",
   },
   tr: {
     nav: {
@@ -103,5 +111,9 @@ export const stringsByLocale: Record<
     readCaseStudy: "Proje detayı",
     viewProject: "Projeyi görüntüle",
     contributorsTitle: "Katkıda bulunanlar",
+    blogPageTitle: "Yazılar",
+    blogPageDescription: "Samet Erkalp'in blogu: yapay zeka, veri bilimi, siber güvenlik, Kubernetes ve teknoloji. Rehberler ve yazılar.",
+    earlierPosts: "Önceki yazılar",
+    recentPosts: "Son yazılar",
   },
 };

@@ -8,13 +8,20 @@ import { getContributions } from "@/lib/contributions";
 const SLUGS_WITH_CONTRIBUTORS = ["huaweict"];
 
 export async function generateMetadata() {
-  return Meta.generate({
-    title: work.title,
-    description: work.description,
-    baseURL: baseURL,
-    image: `/api/og/generate?title=${encodeURIComponent(work.title)}`,
-    path: work.path,
-  });
+  const canonical = `${baseURL}/work`;
+  return {
+    ...Meta.generate({
+      title: work.title,
+      description: work.description,
+      baseURL: baseURL,
+      image: `/api/og/generate?title=${encodeURIComponent(work.title)}`,
+      path: work.path,
+    }),
+    alternates: {
+      canonical,
+      languages: { en: canonical, "x-default": canonical },
+    },
+  };
 }
 
 export default async function Work() {

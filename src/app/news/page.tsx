@@ -8,13 +8,17 @@ export async function generateMetadata() {
   const cookieStore = await cookies();
   const locale = (cookieStore.get("locale")?.value === "tr" ? "tr" : "en") as Locale;
   const { gallery } = getContent(locale);
-  return Meta.generate({
-    title: gallery.title,
-    description: gallery.description,
-    baseURL: baseURL,
-    image: `/api/og/generate?title=${encodeURIComponent(gallery.title)}`,
-    path: gallery.path,
-  });
+  const canonical = `${baseURL}${gallery.path}`;
+  return {
+    ...Meta.generate({
+      title: gallery.title,
+      description: gallery.description,
+      baseURL: baseURL,
+      image: `/api/og/generate?title=${encodeURIComponent(gallery.title)}`,
+      path: gallery.path,
+    }),
+    alternates: { canonical, languages: { en: canonical, "x-default": canonical } },
+  };
 }
 
 export default async function NewsPage() {

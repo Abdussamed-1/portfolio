@@ -24,13 +24,38 @@ export async function generateMetadata() {
     path: home.path,
     image: home.image,
   });
-  
-  // Add siteName for og:site_name
+
   return {
     ...metadata,
+    title: {
+      default: metadata.title as string,
+      template: `%s | ${person.name}`,
+    },
+    applicationName: person.name,
+    keywords: [
+      person.name,
+      person.role,
+      "portfolio",
+      "AI",
+      "data science",
+      "machine learning",
+      "blog",
+    ],
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true },
+    },
     openGraph: {
       ...metadata.openGraph,
       siteName: person.name,
+      locale: locale === "tr" ? "tr_TR" : "en_US",
+      alternateLocale: locale === "tr" ? ["en_US"] : ["tr_TR"],
+    },
+    twitter: {
+      ...metadata.twitter,
+      creator: "@AErkalp71676",
+      site: "@AErkalp71676",
     },
   };
 }

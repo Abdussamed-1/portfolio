@@ -1,8 +1,16 @@
 import { getPosts } from "@/utils/utils";
 import { baseURL, routes as routesConfig } from "@/resources";
 
+const EXCLUDED_BLOG_SLUGS = [
+  "quick-start", "components", "work", "content", "styling", "seo",
+  "password", "pages", "mailchimp", "localization", "blog",
+];
+
 export default async function sitemap() {
-  const blogs = getPosts(["src", "app", "blog", "posts"]).map((post) => ({
+  const allBlogs = getPosts(["src", "app", "blog", "posts"]).filter(
+    (p) => !EXCLUDED_BLOG_SLUGS.includes(p.slug)
+  );
+  const blogs = allBlogs.map((post) => ({
     url: `${baseURL}/blog/${post.slug}`,
     lastModified: post.metadata.publishedAt,
     changeFrequency: "monthly" as const,

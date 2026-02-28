@@ -19,6 +19,18 @@ type Metadata = {
   tag?: string;
   team: Team[];
   link?: string;
+  title_en?: string;
+  title_tr?: string;
+  summary_en?: string;
+  summary_tr?: string;
+  subtitle_en?: string;
+  subtitle_tr?: string;
+  tag_en?: string;
+  tag_tr?: string;
+  intro_en?: string;
+  intro_tr?: string;
+  readMore_en?: string;
+  readMore_tr?: string;
 };
 
 import { notFound } from "next/navigation";
@@ -49,6 +61,18 @@ function readMDXFile(filePath: string) {
     tag: data.tag || [],
     team: data.team || [],
     link: data.link || "",
+    title_en: data.title_en,
+    title_tr: data.title_tr,
+    summary_en: data.summary_en,
+    summary_tr: data.summary_tr,
+    subtitle_en: data.subtitle_en,
+    subtitle_tr: data.subtitle_tr,
+    tag_en: data.tag_en,
+    tag_tr: data.tag_tr,
+    intro_en: data.intro_en,
+    intro_tr: data.intro_tr,
+    readMore_en: data.readMore_en,
+    readMore_tr: data.readMore_tr,
   };
 
   return { metadata, content };

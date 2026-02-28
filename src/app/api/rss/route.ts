@@ -2,11 +2,23 @@ import { getPosts } from "@/utils/utils";
 import { baseURL, blog, person } from "@/resources";
 import { NextResponse } from "next/server";
 
-export async function GET() {
-  const posts = getPosts(["src", "app", "blog", "posts"]);
+const EXCLUDED_BLOG_SLUGS = [
+  "quick-start", "components", "work", "content", "styling", "seo",
+  "password", "pages", "mailchimp", "localization", "blog",
+];
 
-  // Sort posts by date (newest first)
-  const sortedPosts = posts.sort((a, b) => {
+function absoluteImageUrl(image: string | undefined): string {
+  if (!image) return "";
+  if (image.startsWith("http://") || image.startsWith("https://")) return image;
+  const base = baseURL.endsWith("/") ? baseURL.slice(0, -1) : baseURL;
+  return image.startsWith("/") ? `${base}${image}` : `${base}/${image}`;
+}
+
+export async function GET() {
+  const allPosts = getPosts(["src", "app", "blog", "posts"]).filter(
+    (p) => !EXCLUDED_BLOG_SLUGS.includes(p.slug)
+  );
+  const sortedPosts = [...allPosts].sort((a, b) => {
     return new Date(b.metadata.publishedAt).getTime() - new Date(a.metadata.publishedAt).getTime();
   });
 
@@ -36,7 +48,7 @@ export async function GET() {
       <guid>${baseURL}/blog/${post.slug}</guid>
       <pubDate>${new Date(post.metadata.publishedAt).toUTCString()}</pubDate>
       <description><![CDATA[${post.metadata.summary}]]></description>
-      ${post.metadata.image ? `<enclosure url="${baseURL}${post.metadata.image}" type="image/jpeg" />` : ""}
+      ${post.metadata.image ? `<enclosure url="${absoluteImageUrl(post.metadata.image)}" type="${post.metadata.image.toLowerCase().includes(".png") ? "image/png" : "image/jpeg"}" />` : ""}
       ${post.metadata.tag ? `<category>${post.metadata.tag}</category>` : ""}
       <author>${person.email || "noreply@example.com"} (${person.name})</author>
     </item>`,

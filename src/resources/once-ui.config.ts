@@ -11,7 +11,7 @@ import {
   SocialSharingConfig,
   StyleConfig,
 } from "@/types";
-import { home } from "./index";
+import { home, person } from "./content";
 
 // IMPORTANT: Replace with your own domain address - it's used for SEO in meta tags and schema
 // Falls back to demo URL if VERCEL_URL is not set (for local development)
@@ -187,13 +187,13 @@ const mailchimp: MailchimpConfig = {
   },
 };
 
-// default schema data
+// default schema data (SEO: Person/Portfolio)
 const schema: SchemaConfig = {
   logo: "",
-  type: "Organization",
-  name: "Once UI",
+  type: "Person",
+  name: person.name,
   description: home.description,
-  email: "lorant@once-ui.com",
+  email: person.email,
 };
 
 // social links
