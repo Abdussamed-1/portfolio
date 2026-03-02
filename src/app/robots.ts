@@ -1,5 +1,7 @@
 import { baseURL } from "@/resources";
 
+export const runtime = "nodejs";
+
 export default function robots() {
   return {
     rules: [

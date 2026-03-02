@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Fade, Flex, Line, Row, ToggleButton } from "@once-ui-system/core";
@@ -46,8 +46,34 @@ export default TimeDisplay;
 
 export const Header = () => {
   const pathname = usePathname() ?? "";
+  const router = useRouter();
   const locale = useLocale();
   const { about, blog, work, gallery } = getContent(locale);
+
+  useEffect(() => {
+    if (!routes["/news"]) return;
+    if (pathname.startsWith("/news")) return;
+
+    const key = "prefetch:news";
+    try {
+      if (sessionStorage.getItem(key) === "1") return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      // ignore
+    }
+
+    const run = () => {
+      router.prefetch("/news");
+      // Warm the tech news API response cache as well.
+      fetch("/api/tech-news", { cache: "force-cache" }).catch(() => {});
+    };
+
+    if (typeof (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback === "function") {
+      (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(run);
+    } else {
+      setTimeout(run, 250);
+    }
+  }, [router, pathname]);
 
   return (
     <>

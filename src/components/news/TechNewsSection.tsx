@@ -35,13 +35,15 @@ export default function TechNewsSection({ title, locale = "en" }: TechNewsSectio
   const dateLocale = locale === "tr" ? "tr-TR" : "en-GB";
 
   useEffect(() => {
-    fetch("/api/tech-news")
+    const controller = new AbortController();
+    fetch("/api/tech-news", { cache: "force-cache", signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
         setItems(data.items ?? []);
       })
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
+    return () => controller.abort();
   }, []);
 
   if (loading && items.length === 0) {

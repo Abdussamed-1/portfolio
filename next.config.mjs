@@ -1,9 +1,13 @@
 import mdx from "@next/mdx";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
 
 const withMDX = mdx({
   extension: /\.mdx?$/,
   options: {},
 });
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -61,10 +65,11 @@ const nextConfig = {
     ];
   },
   compress: true,
-  experimental: {
-    turbopack: {
-      root: process.cwd(),
-    },
+  // Next 16+: turbopack config is top-level (not experimental).
+  // Setting this prevents Next from picking a wrong workspace root
+  // when unrelated lockfiles exist elsewhere on the machine.
+  turbopack: {
+    root: __dirname,
   },
 };
 

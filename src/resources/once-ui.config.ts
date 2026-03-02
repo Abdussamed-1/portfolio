@@ -11,6 +11,7 @@ import {
   SocialSharingConfig,
   StyleConfig,
 } from "@/types";
+import localFont from "next/font/local";
 import { home, person } from "./content";
 
 // IMPORTANT: Replace with your own domain address - it's used for SEO in meta tags and schema
@@ -39,32 +40,33 @@ const protectedRoutes: ProtectedRoutesConfig = {
   "/work/automate-design-handovers-with-a-figma-to-code-pipeline": true,
 };
 
-// Import and set font for each variant
-import { Geist } from "next/font/google";
-import { Geist_Mono } from "next/font/google";
-
-const heading = Geist({
+// Local bundled fonts (build does not depend on Google Fonts connectivity)
+const heading = localFont({
+  src: "../../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2",
   variable: "--font-heading",
-  subsets: ["latin"],
   display: "swap",
+  weight: "100 900",
 });
 
-const body = Geist({
+const body = localFont({
+  src: "../../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2",
   variable: "--font-body",
-  subsets: ["latin"],
   display: "swap",
+  weight: "100 900",
 });
 
-const label = Geist({
+const label = localFont({
+  src: "../../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2",
   variable: "--font-label",
-  subsets: ["latin"],
   display: "swap",
+  weight: "100 900",
 });
 
-const code = Geist_Mono({
+const code = localFont({
+  src: "../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2",
   variable: "--font-code",
-  subsets: ["latin"],
   display: "swap",
+  weight: "100 900",
 });
 
 const fonts: FontsConfig = {
