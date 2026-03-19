@@ -1,0 +1,313 @@
+---
+title: "Veriyi Güvende Tutmak: Şifreleme, Shor'un Algoritması, Kuantum Teleportasyonu ve Hepsinin Altındaki Saldırı"
+subtitle: "Seri: Kablosuz Ağ Güvenliği — Bölüm 2"
+summary: "AES ve RSA/ECC’den Shor’un kuantum tehdidine, kuantum teleportasyonun gerçek sınırlarına ve ARP spoofing’in neden hâlâ ağ katmanında güvenliği bozduğuna uzanan tek bir çizgi."
+image: "/medium2.png"
+publishedAt: "2026-03-02"
+tag: "Siber Güvenlik"
+---
+
+> **Sorumluluk reddi:** Bu yazıdaki tüm teknikler yalnızca **kendi ağınız veya yazılı izniniz olan sistemler** için kullanılmalıdır. İzinsiz ağ erişimi yasadışıdır.
+
+---
+
+## Giriş
+
+Şifreleme çoğu zaman ikili bir şey gibi düşünülür: veri ya şifrelenir ya da şifrelenmez. Oysa gerçekte şifreleme bir spektrumdur: kullanılan algoritma, anahtar uzunluğu, uygulama biçimi ve giderek artan şekilde *kuantum bilişim geldiğinde matematiksel dayanıklılık varsayımı hâlâ ayakta kalıyor mu* sorusu belirleyicidir.
+
+Bu yazı tek bir çizgiyi takip ediyor: **veriyi iletim sırasında nasıl koruyoruz, ne bunu bozar, kuantum teleportasyon bu resimde nereye oturuyor ve neden ağ katmanındaki saldırılar kriptografiyi tamamen yok sayıyor.**
+
+Sıralama önemli. Önce kriptografiden başlıyor, Shor ile temel varsayımı zedeliyoruz, teleportasyonun daha “temel” bir güvenlik sunup sunmadığını soruyoruz ve sonunda rahatsız edici bir gerçeğe varıyoruz: **ARP spoofing, bunların hepsinin altında çalışır.**
+
+---
+
+## 1. Kriptografik Temel
+
+### Simetrik Şifreleme: AES
+
+AES (Advanced Encryption Standard) modern simetrik şifrelemenin iş yükünü üstlenir. WPA2 AES-CCMP kullanır. TLS genelde AES-GCM kullanır. Disk şifrelemede ise çoğu zaman AES-XTS görülür. Özetle: pratikte her yerde AES vardır.
+
+AES, 128 bitlik bloklar üzerinde çalışır; anahtar planlamasıyla birlikte ikame (substitution), permütasyon (permutation) ve karıştırma (mixing) adımlarından oluşan bir yapı kullanır. Güvenliği ağırlıklı olarak deneysel ve hesaplamalıdır: bilinen bir şekilde anahtarı, ancak kapsamlı arama (exhaustive search) olmadan kurtarmaya yarayan matematiksel “kısayol” yoktur.
+
+<MathBlock>
+AES-128: 2^128 olası anahtar  ≈  3.4 × 10^38
+AES-256: 2^256 olası anahtar  ≈  1.2 × 10^77
+</MathBlock>
+
+Trilyon-trilyon deneme/saniye gibi hızlarda bile AES-128’in tüm anahtar uzayını bitirmesi, evrenin yaşından çok daha uzun sürer.
+
+Yani: AES sorun değil.
+
+### Asimetrik Şifreleme: RSA ve ECC
+
+Asimetrik kriptografi bambaşka bir problemi çözer: güvenilmeyen bir kanalda, daha önce karşılaşmamış iki taraf nasıl ortak bir sır (shared secret) türetebilir?
+
+Bu, internetin temel zorluğudur ve çözümü zarif görünür:
+
+- **RSA**, büyük sayıları çarpanlarına ayırma (integer factorization) problemini temel alır.
+- **ECC** (Elliptic Curve Cryptography), eliptik eğriler üzerinde ayrık logaritma problemini temel alır.
+- **Diffie-Hellman**, sonlu cisimlerde ayrık logaritmalar üzerinden bir anahtar anlaşması sağlar.
+
+Üçü de kritik bir ortak özelliğe sahiptir: dayanıklılıkları **hesaplamalıdır**; bilgi-teorik (information-theoretic) değildir. Yani “kanıtlanmış” biçimde kırılamaz değillerdir; yalnızca klasik bilgisayarlar için matematik ve mevcut yöntemler altında kırılamaz sanılırler.
+
+Bu inanç artık baskı altında.
+
+### Parola Katmanı
+
+Asimetrik kriptografi daha devreye girmeden önce daha basit bir katman vardır: paylaşılan sır.
+
+WPA2-PSK, SSH parolaları, VPN kimlik bilgileri… Bunların hepsi kriptografiyi pratikte tek bir insanın ürettiği sıra indirger.
+
+Entropi bunu anlamak için iyi bir çerçevedir:
+
+<MathBlock>
+H = L × log2(N)
+</MathBlock>
+
+Burada `L` parola uzunluğu, `N` de karakter havuzunun büyüklüğüdür.
+
+| Parola                 | Havuz (N) | Uzunluk (L) | Entropi |
+|------------------------|----------:|------------:|---------:|
+| `password`            |        26 |           8 |     37.6 |
+| `P@ssw0rd!`           |        72 |           9 |     55.7 |
+| Rastgele 20 karakter |        95 |          20 |    131.1 |
+
+Havadan yakalanmış bir WPA2 handshake yaklaşık olarak modern bir GPU ile **1,000,000 PMK türetimi/saniye** seviyesinde saldırıya tabi tutulabilir.
+
+`rockyou.txt` (10 milyar giriş) karşısında bu genelde saatler mertebesindedir.
+
+Rastgele üretilmiş 20 karakterlik bir parola için ise iş, evrenin yaşını aşacak kadar uzar.
+
+Bu yüzden parola katmanı pratikte çoğu zaman başarısız olur: AES zayıf olduğu için değil, AES’i besleyen anahtar/şifre zayıf geldiği için.
+
+---
+
+## 2. Shor'un Algoritması: Asimetrik Temeli Kırmak
+
+### Kuantum Bilişim Ne Değiştiriyor?
+
+Klasik bilgisayarlar bilgiyi bitlerle işler: 0 ya da 1. Kuantum bilgisayarlar ise qubit’lerle (kubit) çalışır; bu qubit’ler süperpozisyonda (aynı anda birden fazla olasılığı temsil eden durum) bulunabilir.
+
+`n` qubit’lik bir kayıt, 2^n olasılığı “tek seferde” temsil edebilir (hepsini listeleyerek değil; kuantum durumuna kodlayıp girişim (interference) etkileriyle işleyerek).
+
+Bu paralellik her problemde işe yaramaz. Özellikle **periyod bulma (period finding)** problemlerinde (bir fonksiyondaki tekrar eden döngüyü bulma) ciddi avantaj sağlar.
+
+Shor’un algoritması tam olarak bunun için, sayıları çarpanlara ayırma problemini period bulmaya indirger.
+
+### İndirgeme: Periyot Bulma Olarak Çarpanlara Ayırma
+
+`N = p × q` (RSA modülü) verildiğinde amaç `p` ve `q`’yu bulmaktır. Shor bunu şu fonksiyonun periyodunu bulmaya indirger:
+
+<MathBlock>
+f(x) = a^x mod N
+</MathBlock>
+
+Klasik tarafta periyodu bulmak için fonksiyonu üstel sayıda noktada değerlendirmek gerekir. Kuantum bilgisayar ise süperpozisyonla tüm değerleri “aynı anda” hazırlar ve **Kuantum Fourier Dönüşümü (QFT)** ile girişim yoluyla periyodu çıkarır.
+
+Eğer periyot `r` çiftse (ve bazı koşullar sağlanıyorsa) `gcd` işlemleriyle asal çarpanların çekirdeğine inebilirsiniz:
+
+<MathBlock>
+p ≈ gcd(a^(r/2) − 1, N)
+q ≈ gcd(a^(r/2) + 1, N)
+</MathBlock>
+
+Çalışana kadar farklı `a` değerleriyle tekrar edilir. Beklenen iterasyon sayısı kabaca polilogaritmik mertebededir.
+
+### Karmaşıklık: RSA’yı Bitiren Fark
+
+Klasik taraftaki en iyi bilinen yaklaşım GNFS ile alt-üstel (sub-exponential) bir davranış görülür. Shor’un algoritması ise **polinomsal**:
+
+| Yöntem | Karmaşıklık |
+|--------|--------------|
+| Deneme bölme (klasik) | O(√N) |
+| GNFS (klasik) | O(exp(c · n^(1/3) · (log n)^(2/3))) |
+| Shor (kuantum) | O((log N)^3) |
+
+RSA-2048 bağlamında bu, “yapısal bir kırılma” olarak düşünülür: RSA/ECC varsayımları, yeterli hataya dayanıklı kuantum bir bilgisayar geldiğinde artık güvenli kabul edilemez.
+
+### Donanım Boşluğu
+
+Shor’un algoritması (tanımlandığı biçimiyle) **hata-düzeltmeli mantıksal qubit’ler** ister: yani hata oranları eşiğin altında olan, kuantum hata düzeltmesiyle yönetilen mantıksal birimler.
+
+Mevcut fiziksel qubit’ler ise gürültülüdür ve dekoherence (kuantum uyumunun bozulması) yaşar. Yaklaşık ölçek olarak: RSA-2048 kırmak için, mevcut fiziğin hata oranları altında milyonlarca fiziksel qubit’in üst üste bindirilmiş bir karşılığı gerekebilir.
+
+Aradaki boşluk gerçek. Ama kapanıyor.
+
+### “Şimdi Topla, Sonra Şifresini Çöz”
+
+Daha yakın vadeli tehdit “kuantum bilgisayar yarın şifreleri çözecek” şeklinde değildir.
+
+Asıl tehdit: iyi kaynaklara sahip saldırganların bugün şifreli trafiği kayıt altına alması ve kuantum donanımı olgunlaştığında geriye dönük olarak çözmesidir.
+
+Veriniz 10 yıl boyunca gizli kalmalıysa ve 10 yıl içinde kriptografik açıdan anlamlı bir kuantum bilgisayar ortaya çıkarsa, risk teorik değil; zaten fiilen başlamış demektir.
+
+Bu yüzden savunmasızlık penceresi, pratik kuantum sistemler gelmeden önce de açık olur.
+
+---
+
+## 3. Kuantum Teleportasyonu: Gerçekte Nedir? Güvenlikle Ne İlgisi Var?
+
+Shor’un algoritması, RSA ve ECC’nin temel aldığı matematiksel zorluğun kuantum karşısında güvenli olmadığını gösterir.
+
+Peki teleportasyonla kuantum mekaniği temelde daha güvenli bir iletişim modeli sunabilir mi?
+
+Kuantum teleportasyon sıkça yanlış anlaşılır; bu yüzden netleştirelim:
+
+### Kuantum Teleportasyon Ne Değildir?
+
+Kuantum teleportasyon ışık hızını aşacak şekilde madde veya enerjiyi “aktarmayı” sağlamaz.
+
+Ayrıca, kuantum kanaldan iletilen bir şifreli mesajın kendiliğinden “gizliliği otomatik garantilemesi” gibi bir durum da yoktur.
+
+### Kuantum Teleportasyon Gerçekte Ne Yapar?
+
+Kuantum teleportasyon, bir kübitin **kuantum durumunu** bir noktadan diğerine aktarır; kübit fiziksel olarak yer değiştirmeden.
+
+Bunun temeli **dolanıklık (entanglement)**tır: iki kübit, klasik benzeri olmayan biçimde korele olur.
+
+Protokol:
+
+1. Alice ve Bob önceden dolanık bir çift kübit paylaşır.
+2. Alice’in teleport edeceği bir kübit durumu vardır: |ψ⟩ = α|0⟩ + β|1⟩.
+3. Alice, kendi kübiti ile dolanık çiftin yarısı üzerinde ortak bir ölçüm yapar. Bu ölçüm Alice tarafındaki durumu “yok eder”.
+4. Alice, ölçüm sonucunu (2 bitlik klasik bilgi) normal bir klasik kanal üzerinden Bob’a gönderir.
+5. Bob, bu 2-bit bilgiye göre düzeltme kapıları uygulayarak hedefteki kübiti |ψ⟩ durumuna getirir.
+
+Klasik bitler gelmeden Bob tarafındaki kübit rastgele ve işe yaramaz bir duruma sahiptir.
+
+### Güvenlik Çıkarımı: No-Cloning Var, Ama “Sihir” Yok
+
+**No-cloning theorem** (klonlanamama teoremi), bilinmeyen bir kuantum durumun saldırgan tarafından sessizce kopyalanamayacağını; ölçümle durumun bozulacağını söyler.
+
+Ama teleportasyon yine de klasik kanal bileşenini gerektirir. Bu klasik mesajın hızı fizik sınırlarına takılır ve protokol, şifrelemeden önce yerel ağ yolunu sihirli şekilde “güvenceye almaz”.
+
+---
+
+## 4. ARP Spoofing: Bunların Hepsinin Altında Çalışan Saldırı
+
+Şimdi rahatsız edici gerçek: AES, RSA/ECC, Shor, teleportasyon ve kuantum sonrası kriptografi dahil her şey kriptografik katmanda çalışır.
+
+ARP spoofing ise ağ katmanında; yönlendirme yolunun güvenilir olduğu varsayımına dayanan tüm kriptografik korumaların altında.
+
+Mükemmel TLS ile (kuantum sonrası anahtar değişimi + AES-GCM) şifrelenmiş olabilirsiniz. Fakat yerel ağda saldırgan ARP cache’inizi zehirlerse, paketler şifreleme içeriği devreye girmeden önce saldırgan makineden geçebilir.
+
+Şifreleme sadece yükü (payload) korur. Yerel yönlendirme yolunu korumaz.
+
+### Protokol Hatası
+
+ARP, yerel ağ segmentinde IP adreslerini MAC adreslerine eşler. Her cihaz ARP cache tutar (yakın zamanda yapılan IP↔MAC eşleşmelerini saklar).
+
+Temel tasarım hatası şudur: **ARP stateless ve authentication’sızdır.**
+
+Bir saldırgan, “herhangi bir IP adresi benimdir” gibi yetkisiz ve doğrulanamayan ARP reply’leri yayınlayabilir; istemciler de doğrulama olmadan cache’i günceller.
+
+İmza yok. Sertifika yok. Meydan okuma-tepki (challenge-response) yok.
+
+### Saldırı Akışı
+
+```
+Normal durum:
+  İstemci (10.0.0.5, MAC: AA:AA)  →  Ağ Geçidi (10.0.0.1, MAC: BB:BB)
+
+ARP zehirleme sonrası:
+  İstemci ARP cache:   10.0.0.1  →  CC:CC  (saldırganın MAC’i)
+  Ağ geçidi ARP cache: 10.0.0.5  →  CC:CC  (saldırganın MAC’i)
+
+Trafik akışı:
+  İstemci  →  Saldırgan (CC:CC)  →  Ağ Geçidi  →  İnternet
+```
+
+IP forwarding açık olduğunda trafik şeffaf biçimde akar.
+
+### Kali Linux’ta Saldırıyı Uygulamak
+
+````bash
+# IP forwarding'i etkinleştir
+echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
+
+# Terminal 1: İstemciyi zehirle
+sudo arpspoof -i eth0 -t 10.0.0.5 10.0.0.1
+
+# Terminal 2: Ağ geçidini zehirle
+sudo arpspoof -i eth0 -t 10.0.0.1 10.0.0.5
+
+# Terminal 3: Araya giren trafiği yakala
+sudo tcpdump -i eth0 -w mitm_capture.pcap host 10.0.0.5
+````
+
+### Saldırgan Ne Görür?
+
+**HTTP üzerinden** her şey: kimlik bilgileri, token’lar ve istek/yanıt gövdesi tamamen görünür.
+
+**HTTPS üzerinden** ise yük şifrelenir; yine de saldırgan şunları gözlemler:
+
+- DNS sorguları (hangi alan adlarına gidiliyor)
+- TLS SNI (hedef ana bilgisayar adı; ClientHello içinde düz metin görünür)
+- sertifika detayları ve bağlantı zamanı
+- trafik hacmi ve paket boyu örüntüleri (meta veriler)
+
+Ve kurban sertifika uyarılarını yok sayar ya da SSL stripping gibi bir senaryo uygulanırsa, şifreleme tamamen devre dışı kalabilir.
+
+### Tespit
+
+````bash
+# ARP cache içinde tekrar eden MAC adreslerini kontrol et
+arp -a | awk '{print $4}' | sort | uniq -d
+
+# ARP trafiğini gerçek zamanlı izle
+sudo tcpdump -i eth0 -n arp
+````
+
+İyi izlenen ortamlarda `arpwatch` gibi araçlar IP↔MAC eşleşmeleri değiştiğinde hızlı uyarı üretebilir.
+
+### Önlem
+
+**Ağ katmanında:**
+
+````bash
+# Kritik hostlar için statik ARP girişleri
+sudo arp -s 10.0.0.1 BB:BB:BB:BB:BB:BB
+````
+
+**Anahtar (switch) katmanında:**
+
+- Dinamik ARP Inspection (DAI)
+- Port security
+
+**Erişim (access) katmanında:**
+
+- 802.1X port kimlik doğrulaması
+
+**Makine (host) katmanında:**
+
+- HTTPS/HSTS zorlaması
+- Güvenilmeyen ağlarda VPN kullanımı
+
+---
+
+## Sonuç: Katmanlı Bir Tehdit, Katmanlı Bir Savunma
+
+Bu yazı, kriptografik temellerden başlayıp hepsinin altında çalışan ağ katmanı saldırısına uzanan bir çizgiyi takip etti.
+
+Bağlayıcı içgörü şudur:
+
+**Shor’un algoritması RSA/ECC’yi tehdit eder. AES yaşar; ama “AES’i düzeltip her şeyi halledeceğiz” diye düşünmek doğru değil. Göç (migrasyon) şart.**
+
+**Kuantum teleportasyon güvenlik modelini değiştirir; fakat klasik ağ altyapısını ikame etmez ve yerel yönlendirme yolunu otomatik olarak korumaz.**
+
+**ARP spoofing, kriptografinin altında çalışır.**
+
+Bu yüzden savunma, tek bir “aşırı güçlü kilit” değil; yığının tamamına yayılmış katmanlı olmalıdır.
+
+---
+
+**Seride Devam Eden:**
+
+- **Bölüm 3:** 802.1X / EAP-TLS — Sertifika Tabanlı Kablosuz Altyapı Kurmak
+- **Bölüm 4:** CRYSTALS-Kyber Detaylı — MLWE, Lattice Problemleri ve Anahtar Kapsülleme
+- **Bölüm 5:** BB84 Simülasyonu — Eavesdropping Tespitli Tam Bir Python Uygulaması
+
+---
+
+**Etiketler:** `Kriptografi` `Post-Kuantum Kriptografi` `Kuantum Teleportasyonu` `Shor'un Algoritması` `ARP Spoofing` `Ağ Güvenliği` `Kali Linux` `WPA3` `Kuantum İnternet` `Siber Güvenlik`
+

@@ -1,0 +1,367 @@
+---
+title: "Securing Data: Encryption, Shor's Algorithm, Quantum Teleportation, and the Attack Beneath Them All"
+subtitle: "Series: Wireless Network Security — Part 2"
+summary: "A single thread from AES/RSA-ECC to Shor’s quantum threat, quantum teleportation’s real limits, and why ARP spoofing still breaks security at the network layer."
+image: "/medium2.png"
+publishedAt: "2026-03-02"
+tag: "Cybersecurity"
+---
+
+> **Disclaimer:** All techniques described in this article are intended solely for use on **your own network or systems for which you have explicit written authorization.** Unauthorized access is illegal.
+
+---
+
+*Part 1 established the attack surface: monitor mode, WEP's mathematical collapse, WPA2 handshake capture, and the first glimpse of the quantum horizon. This article goes deeper - into the cryptographic foundations that protect data, the algorithm that threatens to undo them, what quantum teleportation means for the future of secure communication, and the network-layer attack that operates entirely beneath this conversation.*
+
+---
+
+## Introduction
+
+Encryption is often treated as a binary: either data is encrypted, or it isn't. In practice, encryption exists on a spectrum - defined by the algorithm, the key length, the implementation, and increasingly, by whether the underlying mathematical hardness assumption survives the arrival of quantum computing.
+
+This article traces a single thread: **how we protect data in transit, what breaks that protection, where quantum teleportation enters the picture, and what layer of the network stack all of this still fails to address.**
+
+The order matters. We start with the cryptographic foundation, break it with Shor, ask whether quantum mechanics can offer something fundamentally more secure through teleportation, and then confront the uncomfortable reality that ARP spoofing operates at a layer where none of these protections apply.
+
+---
+
+## 1. The Cryptographic Foundation
+
+### Symmetric Encryption: AES
+
+AES (Advanced Encryption Standard) is the workhorse of modern symmetric encryption. WPA2 uses AES-CCMP. TLS uses AES-GCM. Disk encryption uses AES-XTS. It is, practically speaking, everywhere.
+
+AES operates on 128-bit data blocks using a key-scheduled series of substitution, permutation, and mixing operations. Its security is purely empirical and computational - there is no known mathematical shortcut to recover the key without exhaustive search.
+
+<MathBlock>
+AES-128: 2^128 possible keys  ~=  3.4 x 10^38
+AES-256: 2^256 possible keys  ~=  1.2 x 10^77
+</MathBlock>
+
+At a trillion trillion attempts per second, exhausting AES-128 would take longer than the current age of the universe by many orders of magnitude. AES is not the problem.
+
+### Asymmetric Encryption: RSA and ECC
+
+Asymmetric cryptography solves a different problem: how do two parties establish a shared secret over an untrusted channel without having met beforehand? This is the foundational challenge of the internet - and the solution is elegant.
+
+**RSA** relies on the integer factorization problem. Multiplying two large primes `p` and `q` to produce `N = p × q` is trivial. Reversing it - recovering `p` and `q` from `N` alone - is computationally infeasible at sufficient key lengths.
+
+<MathBlock>
+RSA-2048: N is a ~617-digit number
+Best classical attack (GNFS): sub-exponential, but still impractical
+Estimated classical cracking time: billions of years
+</MathBlock>
+
+**ECC (Elliptic Curve Cryptography)** relies on the elliptic curve discrete logarithm problem. Given a point `P` on a curve and `Q = kP` (scalar multiplication), finding `k` is hard. ECC achieves equivalent security to RSA at much shorter key lengths - a 256-bit ECC key is roughly equivalent to RSA-3072.
+
+**Diffie-Hellman** key exchange allows two parties to derive a shared secret over a public channel. Its security rests on the discrete logarithm problem in finite fields - structurally similar to ECC.
+
+All three - RSA, ECC, DH - share a critical property: their hardness is **computational**, not information-theoretic. They are not provably unbreakable. They are merely believed to be unbreakable for classical computers given current mathematics. That belief is now under pressure.
+
+### The Password Layer
+
+Before asymmetric cryptography even enters the picture, there is a simpler layer: the pre-shared key. WPA2-PSK, SSH passwords, VPN credentials - all of these reduce cryptographic strength to a single human-generated secret.
+
+Entropy quantifies how much uncertainty an attacker faces:
+
+<MathBlock>
+H = L × log2(N)
+</MathBlock>
+
+Where `L` is password length and `N` is the character pool size.
+
+| Password | Pool (N) | Length (L) | Entropy |
+|----------|----------|------------|---------|
+| `password` | 26 | 8 | 37.6 bits |
+| `P@ssw0rd!` | 72 | 9 | 55.7 bits |
+| Random 20-char (full ASCII) | 95 | 20 | 131.1 bits |
+
+A WPA2 handshake captured off the air can be attacked at roughly 1,000,000 PMK derivations per second on a modern GPU. Against `rockyou.txt` (10 billion entries), that's approximately 3 hours. Against a randomly generated 20-character password, it's longer than the age of the universe.
+
+```bash
+# Cryptographically random password generation
+openssl rand -base64 32
+
+# Or from urandom with a custom character set
+cat /dev/urandom | tr -dc 'A-Za-z0-9!@#$%^&*' | head -c 24
+```
+
+The password layer is the one that fails most often in practice - not because AES is weak, but because the key feeding it is.
+
+---
+
+## 2. Shor's Algorithm: Breaking the Asymmetric Foundation
+
+### What Quantum Computing Changes
+
+A classical computer processes information in bits: 0 or 1. A quantum computer processes information in qubits, which can exist in a superposition of both states simultaneously. An n-qubit register can represent `2^n` states in parallel - not by storing them all, but by encoding them in a quantum superposition that can be manipulated coherently.
+
+This parallelism doesn't help with every problem. It helps specifically with problems that can be reduced to **period finding** - identifying the repeating cycle in a function. Shor's algorithm exploits this for integer factorization.
+
+### The Reduction: Factoring as Period Finding
+
+Given `N = p × q` (the RSA modulus), the goal is to find `p` and `q`. Shor showed this reduces to:
+
+**Step 1 - Choose a random integer `a`, where `1 < a < N` and `gcd(a, N) = 1`.** If `gcd != 1`, you've already found a factor - rare but done.
+
+**Step 2 - Find the period `r` of the function:**
+
+<MathBlock>
+f(x) = a^x mod N
+</MathBlock>
+
+This function is periodic: `f(x + r) = f(x)` for all `x`. The period `r` (also called the order of `a` modulo `N`) is the smallest positive integer satisfying `a^r = 1 (mod N)`.
+
+Classically, finding `r` requires evaluating `f` at exponentially many points. The quantum computer evaluates all values simultaneously through superposition, then applies the **Quantum Fourier Transform (QFT)** to the resulting state. The QFT extracts the frequency (and therefore the period) from the superposition through quantum interference - constructive interference amplifies the correct period, destructive interference suppresses incorrect ones.
+
+**Step 3 - Extract the factors.** If `r` is even and `a^(r/2) != -1 (mod N)`:
+
+<MathBlock>
+p ~= gcd(a^(r/2) - 1, N)
+q ~= gcd(a^(r/2) + 1, N)
+</MathBlock>
+
+This yields the non-trivial factors of `N` with probability >= 1/2 per attempt. Repeat with different values of `a` until successful - expected iterations: `O(log log N)`.
+
+### Complexity: The Gap That Ends RSA
+
+| Method | Complexity |
+|--------|------------|
+| Trial division (classical) | O(sqrt(N)) - exponential in bit length |
+| General Number Field Sieve (best classical) | O(exp(c · n^(1/3) · (log n)^(2/3))) - sub-exponential |
+| Shor's algorithm (quantum) | O((log N)^3) - polynomial |
+
+For RSA-2048: GNFS requires approximately `10^24` classical operations. Shor's algorithm requires approximately `(2048)^3 ~= 8.6 x 10^9` quantum operations - a reduction of around 15 orders of magnitude.
+
+This is not an incremental improvement. It is a structural break.
+
+### The Hardware Gap
+
+Shor's algorithm as described requires **fault-tolerant logical qubits** - qubits with error rates below the fault-tolerance threshold, maintained through quantum error correction. Current physical qubits are noisy: they decohere, accumulate errors, and require roughly 1,000 physical qubits to encode a single reliable logical qubit.
+
+Breaking RSA-2048 requires an estimated 4,000 logical qubits - approximately 4 million physical qubits at current error rates. As of early 2025, the most advanced quantum processors operate in the hundreds to low thousands of physical qubits range.
+
+The gap is real. But it is closing, and the trajectory is clear.
+
+### "Harvest Now, Decrypt Later"
+
+The more immediate threat is not a quantum computer breaking encryption in real time. It is an adversary - a well-resourced nation-state or a sophisticated criminal organization - recording encrypted traffic today with the intention of decrypting it once quantum hardware matures.
+
+If your data needs to remain confidential for 10 years, and a cryptographically relevant quantum computer arrives in 10 years, the threat is not future - **it is present.** The window of vulnerability is already open.
+
+---
+
+## 3. Quantum Teleportation: What It Actually Is - and What It Means for Security
+
+Shor's algorithm establishes that the mathematical hardness underpinning RSA and ECC is not quantum-safe. The natural question that follows: can quantum mechanics itself offer a fundamentally more secure communication channel?
+
+This is where quantum teleportation enters the picture.
+
+### What Quantum Teleportation Is Not
+
+Quantum teleportation does not transmit matter, energy, or classical information faster than light. It does not allow you to send an encrypted message through a quantum channel and have it arrive uninterceptable by definition.
+
+What it does is more subtle - and in some ways more profound.
+
+### What Quantum Teleportation Actually Does
+
+Quantum teleportation is a protocol that transfers the **exact quantum state** of a qubit from one location to another, without physically moving the qubit itself.
+
+The protocol relies on **quantum entanglement** - a correlation between two qubits that persists regardless of distance. When two qubits are entangled, measuring one determines the state of the other in a way that has no classical analog.
+
+The teleportation procedure:
+
+1. **Establish entanglement:** Alice and Bob share an entangled pair of qubits (EPR pair), created in advance.
+2. **Alice has a qubit to teleport:** Call its state `|ψ⟩ = α|0⟩ + β|1⟩`.
+3. **Alice performs a joint measurement** on her qubit-to-teleport and her half of the entangled pair. This destroys the original state at Alice's location.
+4. **Alice sends the 2-bit classical result** to Bob over a normal classical channel.
+5. **Bob applies a correction** (`I`, `X`, `Z`, or `XZ`) to recover `|ψ⟩`.
+
+Bob now holds the exact quantum state that Alice had. Alice no longer has it. The state was transferred, not copied - consistent with the **no-cloning theorem**.
+
+```
+Alice side:                          Bob side:
+  |ψ⟩ ──┐                              ┌── (entangled qubit)
+         ├── Joint Bell measurement      │
+  EPR ───┘         │                    │
+  qubit            │ 2 classical bits   │
+                   └────────────────────┤
+                                        ▼
+                              Apply correction gate
+                                        │
+                                        ▼
+                                      |ψ⟩  <- exact replica
+```
+
+### The Security Implication: The No-Cloning Guarantee
+
+The no-cloning theorem is not a limitation of current technology - it is a fundamental consequence of quantum mechanics. An eavesdropper intercepting a quantum channel cannot copy a qubit's state without disturbing it. Any interception attempt is detectable in principle.
+
+Quantum teleportation takes this further: the state being transferred exists only once at the destination after the classical bits are received and correction is applied. An attacker intercepting only the quantum channel gets nothing useful. An attacker intercepting only the classical channel gets two bits with no quantum state attached.
+
+### The Critical Distinction: Teleportation != Communication
+
+Quantum teleportation **requires a classical channel** to complete. The 2-bit correction message travels at light speed or slower over a classical network. Until Bob receives that message, his qubit carries zero usable information about `|ψ⟩`.
+
+So teleportation cannot replace classical networking infrastructure. It is a mechanism for transferring quantum states - not classical data.
+
+### Where Teleportation Is Heading in Security
+
+The practical intersection with cryptography and networking lies in the **quantum internet**:
+
+- Quantum repeaters use teleportation to extend entanglement over long distances.
+- Blind quantum computing uses teleportation to delegate computation without revealing input.
+- Entanglement-based state transfer can support future quantum-safe key agreement models.
+
+The quantum internet is not science fiction - it is early-stage infrastructure.
+
+### What This Means in Context
+
+Shor's algorithm threatens the computational hardness assumption. Quantum teleportation (and the broader quantum internet it enables) offers a different kind of security - one grounded in physical law rather than mathematical conjecture.
+
+But it does not replace classical networking, and it does not address the full stack.
+
+Which brings us to the layer none of this touches.
+
+---
+
+## 4. ARP Spoofing: The Attack That Operates Below All of This
+
+Everything discussed so far - AES, RSA, Shor's algorithm, quantum teleportation, post-quantum cryptography - operates at the cryptographic layer.
+
+ARP spoofing operates at the network layer, beneath all of it.
+
+You can have perfectly implemented TLS with CRYSTALS-Kyber key exchange and AES-256-GCM encryption. If an attacker poisons ARP cache on your local network, traffic may still flow through their machine before any of that helps. Encryption protects payload. It does not protect routing.
+
+### The Protocol Flaw
+
+ARP (Address Resolution Protocol) maps IP addresses to MAC addresses on a local segment. Every device maintains an ARP cache.
+
+Core design flaw: **ARP is stateless and unauthenticated.** Any device can broadcast an unsolicited ARP reply claiming to be any IP address, and many devices will update cache without verification.
+
+No signature. No certificate. No challenge-response.
+
+### The Attack Flow
+
+```
+Normal state:
+  Client (10.0.0.5, MAC: AA:AA)  ->  Gateway (10.0.0.1, MAC: BB:BB)
+
+After ARP poisoning:
+  Client ARP cache:   10.0.0.1  ->  CC:CC  (attacker's MAC)
+  Gateway ARP cache:  10.0.0.5  ->  CC:CC  (attacker's MAC)
+
+Traffic flow:
+  Client  ->  Attacker (CC:CC)  ->  Gateway  ->  Internet
+                  ^
+          intercept / log / modify
+```
+
+The attacker sends forged ARP replies continuously:
+
+- To client: "I am the gateway."
+- To gateway: "I am the client."
+
+With IP forwarding enabled, traffic passes through transparently.
+
+### Executing the Attack on Kali Linux
+
+```bash
+# Enable IP forwarding
+echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
+
+# Terminal 1: Poison client
+sudo arpspoof -i eth0 -t 10.0.0.5 10.0.0.1
+
+# Terminal 2: Poison gateway
+sudo arpspoof -i eth0 -t 10.0.0.1 10.0.0.5
+
+# Terminal 3: Capture intercepted traffic
+sudo tcpdump -i eth0 -w mitm_capture.pcap host 10.0.0.5
+
+# Analyze in Wireshark
+wireshark mitm_capture.pcap &
+```
+
+### What the Attacker Sees
+
+Over **HTTP:** credentials, session tokens, form data, full request/response bodies.
+
+Over **HTTPS:** payload remains encrypted, but attacker still sees:
+
+- DNS queries
+- TLS SNI (hostname in ClientHello)
+- certificate and timing metadata
+- volume and packet-size patterns
+
+If target ignores certificate warnings, or SSL stripping succeeds, encryption can collapse.
+
+### Detection
+
+```bash
+# Duplicate MAC entries may indicate poisoning
+arp -a | awk '{print $4}' | sort | uniq -d
+
+# Live ARP monitoring
+sudo tcpdump -i eth0 -n arp
+
+# Optional alerting
+sudo apt install arpwatch
+sudo arpwatch -i eth0
+```
+
+A duplicate MAC entry in ARP cache is one of the clearest operational signals.
+
+### Mitigation
+
+**Network layer:**
+
+```bash
+# Static ARP for critical hosts
+sudo arp -s 10.0.0.1 BB:BB:BB:BB:BB:BB
+```
+
+**Switch layer:**
+
+- Dynamic ARP Inspection (DAI)
+- Port security
+
+**Access layer:**
+
+- 802.1X port authentication
+- Private VLANs
+
+**Host layer:**
+
+- Enforce HTTPS (HSTS)
+- Certificate pinning for sensitive apps
+- VPN on untrusted networks
+
+---
+
+## Conclusion: A Layered Threat, A Layered Defense
+
+This article traced a path from mathematical foundations of encryption to a network-layer attack operating beneath them.
+
+Key insight:
+
+**Shor's algorithm threatens asymmetric cryptography used in key exchange. AES survives, but RSA/ECC assumptions do not.**
+
+**Quantum teleportation points toward a physical-law security model, but does not replace classical networking or solve the full stack.**
+
+**ARP spoofing sits beneath cryptographic protections.**
+
+Security is not one strong lock. It is integrity across every layer of the stack.
+
+---
+
+**Coming Up in the Series:**
+
+- **Part 3:** 802.1X / EAP-TLS - Building a Certificate-Based Wireless Infrastructure
+- **Part 4:** CRYSTALS-Kyber in Depth - Lattice Problems, MLWE, and Key Encapsulation
+- **Part 5:** Simulating BB84 - A Complete Python Implementation with Eavesdropping Detection
+
+---
+
+**Tags:** `Cryptography` `Post-Quantum Cryptography` `Quantum Teleportation` `Shor's Algorithm` `ARP Spoofing` `Network Security` `Kali Linux` `WPA3` `Quantum Internet` `Cybersecurity`
+

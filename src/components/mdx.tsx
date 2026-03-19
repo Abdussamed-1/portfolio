@@ -1,6 +1,7 @@
 import { MDXRemote, MDXRemoteProps } from "next-mdx-remote/rsc";
 import React, { ReactNode } from "react";
 import { slugify as transliterate } from "transliteration";
+import remarkGfm from "remark-gfm";
 
 import {
   Heading,
@@ -170,6 +171,88 @@ function createHR() {
   );
 }
 
+function createTable({ children }: { children: ReactNode }) {
+  return (
+    <div style={{ overflowX: "auto", margin: "16px 0" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
+        {children}
+      </table>
+    </div>
+  );
+}
+
+function createTableHeader({ children }: { children: ReactNode }) {
+  return <thead>{children}</thead>;
+}
+
+function createTableBody({ children }: { children: ReactNode }) {
+  return <tbody>{children}</tbody>;
+}
+
+function createTableRow({ children }: { children: ReactNode }) {
+  return <tr>{children}</tr>;
+}
+
+function createTableHead({ children }: { children: ReactNode }) {
+  return (
+    <th
+      style={{
+        textAlign: "left",
+        padding: "10px 12px",
+        borderBottom: "1px solid var(--neutral-alpha-medium)",
+        color: "var(--neutral-on-background-strong)",
+        fontWeight: 600,
+      }}
+    >
+      {children}
+    </th>
+  );
+}
+
+function createTableCell({ children }: { children: ReactNode }) {
+  return (
+    <td
+      style={{
+        padding: "10px 12px",
+        borderBottom: "1px solid var(--neutral-alpha-weak)",
+        color: "var(--neutral-on-background-medium)",
+      }}
+    >
+      {children}
+    </td>
+  );
+}
+
+function createMathBlock({ children }: { children: ReactNode }) {
+  return (
+    <Card
+      marginTop="12"
+      marginBottom="16"
+      padding="16"
+      radius="m"
+      border="brand-alpha-medium"
+      background="brand-alpha-weak"
+      style={{
+        backgroundImage:
+          "linear-gradient(135deg, var(--brand-alpha-weak), var(--accent-alpha-weak))",
+      }}
+    >
+      <Text
+        as="div"
+        variant="body-default-m"
+        onBackground="neutral-strong"
+        style={{
+          fontFamily: "var(--font-code)",
+          lineHeight: "1.8",
+          whiteSpace: "pre-wrap",
+        }}
+      >
+        {children}
+      </Text>
+    </Card>
+  );
+}
+
 const components = {
   p: createParagraph as any,
   h1: createHeading("h1") as any,
@@ -186,6 +269,13 @@ const components = {
   ul: createList("ul") as any,
   li: createListItem as any,
   hr: createHR as any,
+  table: createTable as any,
+  thead: createTableHeader as any,
+  tbody: createTableBody as any,
+  tr: createTableRow as any,
+  th: createTableHead as any,
+  td: createTableCell as any,
+  MathBlock: createMathBlock as any,
   Heading,
   Text,
   CodeBlock,
@@ -209,5 +299,16 @@ type CustomMDXProps = MDXRemoteProps & {
 };
 
 export function CustomMDX(props: CustomMDXProps) {
-  return <MDXRemote options={{ blockJS: false }} {...props} components={{ ...components, ...(props.components || {}) }} />;
+  return (
+    <MDXRemote
+      options={{
+        blockJS: false,
+        mdxOptions: {
+          remarkPlugins: [remarkGfm],
+        },
+      }}
+      {...props}
+      components={{ ...components, ...(props.components || {}) }}
+    />
+  );
 }

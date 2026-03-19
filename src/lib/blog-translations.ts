@@ -16,6 +16,14 @@ export const BLOG_POST_TRANSLATIONS: Record<
     en: "kali-linux-network-security-post-quantum",
     tr: "kali-linux-ag-guvenlik-post-kuantum-tr",
   },
+  "securing-data-part2-rewritten": {
+    en: "securing-data-part2-rewritten",
+    tr: "securing-data-part2-rewritten-tr",
+  },
+  "securing-data-part2-rewritten-tr": {
+    en: "securing-data-part2-rewritten",
+    tr: "securing-data-part2-rewritten-tr",
+  },
 };
 
 export function getTranslatedBlogSlug(
