@@ -79,7 +79,6 @@ export default async function Blog() {
       <Column fillWidth flex={1} gap="40">
         <Posts range={[1, 1]} thumbnail exclude={EXCLUDED_POST_SLUGS} locale={locale} />
         <Posts range={[2, 3]} columns="2" thumbnail direction="column" exclude={EXCLUDED_POST_SLUGS} locale={locale} />
-        <Mailchimp marginBottom="l" />
         {hasEarlierPosts && (
           <>
             <Heading as="h2" variant="heading-strong-xl" marginLeft="l">
@@ -88,6 +87,7 @@ export default async function Blog() {
             <Posts range={[4]} columns="2" exclude={EXCLUDED_POST_SLUGS} locale={locale} />
           </>
         )}
+        <Mailchimp marginBottom="l" />
       </Column>
     </Column>
   );
