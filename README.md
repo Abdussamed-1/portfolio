@@ -1,19 +1,44 @@
+
+
+
 # Samet Erkalp – Portfolio
 
-Kişisel portfolyo sitesi: yapay zeka, veri bilimi ve biyoinformatik alanındaki projeler, blog yazıları ve güncel haberler.
-
-**Tech stack:** Next.js 16, Once UI (Magic Portfolio), MDX, Supabase, Resend
+Kişisel portfolyo web sitesi.  
+Yapay zeka, veri bilimi ve biyoinformatik alanındaki projelerimi, blog yazılarımı ve teknolojiyle ilgili güncel içerikleri paylaşmak için geliştirdim.
 
 ---
 
-## İçerik
+## 🚀 Özellikler
 
-- **Ana sayfa** – Kısa tanıtım ve öne çıkan proje
-- **Hakkımda** – Özgeçmiş, beceriler, eğitim
-- **Projeler** – İş deneyimleri ve projeler (Supabase ile katkıda bulunanlar)
-- **Blog** – MDX ile yazılar (örn. biyoinformatik, Kubernetes)
-- **Haberler** – Teknoloji haberleri (RSS feed’ler)
-- **Bülten** – E-posta aboneliği (Supabase + Resend; haftalık özet ve yeni yazı bildirimi)
+- **Ana Sayfa:** Kısa tanıtım ve öne çıkan içerikler  
+- **Hakkımda:** Eğitim, beceriler ve özgeçmiş  
+- **Projeler:** Üzerinde çalıştığım projeler ve iş deneyimleri  
+- **Blog:** MDX ile yazılmış teknik yazılar (örneğin biyoinformatik, Kubernetes)  
+- **Haberler:** Teknoloji dünyasından güncel içerikler (RSS feed)  
+- **Bülten:** E-posta aboneliği ile haftalık özet ve yeni yazı bildirimleri  
+
+---
+
+## 🛠️ Kullanılan Teknolojiler
+
+Bu proje modern web teknolojileri kullanılarak geliştirilmiştir:
+
+- **Next.js 16** → React tabanlı framework  
+- **Once UI** → UI bileşenleri ve tasarım sistemi  
+- **MDX** → Markdown + React ile içerik yönetimi  
+- **Supabase** → Veritabanı ve backend servisleri  
+- **Resend** → E-posta gönderimi (newsletter sistemi)  
+
+---
+
+## ⚙️ Kurulum
+
+Projeyi kendi bilgisayarında çalıştırmak için aşağıdaki adımları takip et:
+
+### 1. Depoyu klonla
+```bash
+git clone https://github.com/kullanici-adin/repo-adi.git
+cd repo-adi
 
 ---
 
