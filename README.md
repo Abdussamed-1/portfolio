@@ -1,85 +1,91 @@
+# Samet Erkalp — Portfolio
 
+**Live site:** [sameterkalp.com](https://sameterkalp.com)
 
-
-# Samet Erkalp – Portfolio
-
-Kişisel portfolyo web sitesi.  
-Yapay zeka, veri bilimi ve biyoinformatik alanındaki projelerimi, blog yazılarımı ve teknolojiyle ilgili güncel içerikleri paylaşmak için geliştirdim.
+Personal website and professional presence for **Samet Erkalp** (AI & Data Science Engineer). This repository contains the source for a multilingual portfolio with project showcases, long-form writing, curated technology news, and an optional newsletter.
 
 ---
 
-## 🚀 Özellikler
+## Overview
 
-- **Ana Sayfa:** Kısa tanıtım ve öne çıkan içerikler  
-- **Hakkımda:** Eğitim, beceriler ve özgeçmiş  
-- **Projeler:** Üzerinde çalıştığım projeler ve iş deneyimleri  
-- **Blog:** MDX ile yazılmış teknik yazılar (örneğin biyoinformatik, Kubernetes)  
-- **Haberler:** Teknoloji dünyasından güncel içerikler (RSS feed)  
-- **Bülten:** E-posta aboneliği ile haftalık özet ve yeni yazı bildirimleri  
+The site presents a cohesive narrative across **work history**, **education**, **technical strengths**, and **selected projects**, together with a **blog** and a **news** section. Content is available in **English and Turkish**, with theme support for light, dark, and system preferences, and contextual display of location and local time.
 
 ---
 
-## 🛠️ Kullanılan Teknolojiler
+## Site structure
 
-Bu proje modern web teknolojileri kullanılarak geliştirilmiştir:
-
-- **Next.js 16** → React tabanlı framework  
-- **Once UI** → UI bileşenleri ve tasarım sistemi  
-- **MDX** → Markdown + React ile içerik yönetimi  
-- **Supabase** → Veritabanı ve backend servisleri  
-- **Resend** → E-posta gönderimi (newsletter sistemi)  
-
----
-
-## ⚙️ Kurulum
-
-Projeyi kendi bilgisayarında çalıştırmak için aşağıdaki adımları takip et:
-
-### 1. Depoyu klonla
-```bash
-git clone https://github.com/kullanici-adin/repo-adi.git
-cd repo-adi
+| Area | Description |
+|------|-------------|
+| **Home** | Hero messaging, role summary, and a featured work highlight. |
+| **About** | Introduction, chronological experience, studies, and grouped skills; contact and social links. |
+| **Work** | Project entries with narrative context and links to external materials where applicable. |
+| **Blog** | Articles on AI, data practice, security, infrastructure-style guides, and related topics. |
+| **News** | Aggregated technology headlines and supplementary links. |
+| **Newsletter** | Email subscription for updates on projects and new posts (where configured). |
 
 ---
 
-## Geliştirme
+## Features
 
-**Bağımlılıkları yükle**
+- Bilingual interface (English / Turkish)
+- MDX-based blog and project pages
+- Responsive layout with accessible navigation
+- Newsletter and related backend integrations (see environment configuration)
+
+---
+
+## Tech stack
+
+- **Framework:** [Next.js](https://nextjs.org/) (App Router)
+- **Language:** TypeScript
+- **UI:** React, [Once UI](https://once-ui.com/) (`@once-ui-system/core`)
+- **Content:** MDX
+- **Data / services:** Supabase client, Resend (where enabled for mail flows)
+
+---
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) (LTS recommended)
+- Package manager: `npm` (or compatible)
+
+---
+
+## Local development
+
+Install dependencies:
+
 ```bash
 npm install
 ```
 
-**Geliştirme sunucusu**
+Start the development server:
+
 ```bash
 npm run dev
 ```
 
-**Production build**
+Production build and run:
+
 ```bash
 npm run build
 npm start
 ```
 
-**Ortam değişkenleri**  
-`.env.example` dosyasına bakın; `.env.local` oluşturup Supabase, Resend ve isteğe bağlı diğer değerleri ekleyin.
+Lint:
+
+```bash
+npm run lint
+```
 
 ---
 
-## Yapılandırma ve içerik
+## Configuration
 
-- **Genel config:** `src/resources/once-ui.config.ts` (baseURL, routes, tema vb.)
-- **İçerik (metinler, sosyal linkler):** `src/resources/content.tsx`
-- **Çeviriler (EN/TR):** `src/resources/translations.tsx`
-- **Blog yazıları:** `src/app/blog/posts/*.mdx`
-- **Projeler:** `src/app/work/projects/*.mdx`
+Secrets and service keys are not committed to the repository. Copy **`.env.example`** to **`.env.local`**, then supply the variables required for your environment (see comments in the example file).
 
 ---
 
-## Altyapı
+## License
 
-- **Supabase:** `contributions` tablosu (proje katkıda bulunanları), `subscriptions` (bülten aboneleri)
-- **Resend:** Bülten e-postaları (haftalık özet + yeni blog yazısı bildirimi)
-- **Cron / API:** `GET /api/newsletter/weekly`, `POST /api/newsletter/notify-post` (CRON_SECRET ile korumalı)
-
-Şablon: [Magic Portfolio](https://github.com/once-ui-system/magic-portfolio) (Once UI).  
-Lisans: CC BY-NC 4.0 (atıf gerekli, ticari kullanım yok).
+This project is licensed under **CC BY-NC 4.0** (Attribution-NonCommercial). Attribution is required; commercial use is not permitted under this license.
