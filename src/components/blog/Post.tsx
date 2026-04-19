@@ -36,6 +36,7 @@ export default function Post({ post, thumbnail, direction }: PostProps) {
           src={post.metadata.image}
           alt={"Thumbnail of " + post.metadata.title}
           aspectRatio="16 / 9"
+          style={direction === "row" ? { maxWidth: "280px", minWidth: "280px", flexShrink: 0 } : undefined}
         />
       )}
       <Row fillWidth>

@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { Column, Heading, Meta, Schema } from "@once-ui-system/core";
+import { Column, Heading, Meta, Row, Schema, SmartLink, Text } from "@once-ui-system/core";
 import { Mailchimp } from "@/components";
 import { Posts } from "@/components/blog/Posts";
 import { shouldShowPostInLocale } from "@/lib/blog-translations";
@@ -87,6 +87,13 @@ export default async function Blog() {
             <Posts range={[4]} columns="2" exclude={EXCLUDED_POST_SLUGS} locale={locale} />
           </>
         )}
+        <Row fillWidth horizontal="center" marginBottom="8">
+          <SmartLink href="/blog/all-posts" suffixIcon="arrowRight">
+            <Text variant="label-strong-m">
+              {locale === "tr" ? "Tum yazilari kesfet" : "Explore all posts"}
+            </Text>
+          </SmartLink>
+        </Row>
         <Mailchimp marginBottom="l" />
       </Column>
     </Column>
