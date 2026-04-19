@@ -1,0 +1,509 @@
+---
+title: "Wireless Network Security — Part 3: Redundancy, Syndromes, and Fault Tolerance: Building Reliable Qubits from Noisy Hardware"
+subtitle: "Series: Wireless Network Security — Part 3"
+summary: "From Shannon and Hamming to Shor codes and surface-code thresholds: why error correction is the true bottleneck between noisy qubits and cryptographically relevant quantum computers."
+image: "/images/projects/project-01/articleimg.png"
+publishedAt: "2026-04-19"
+tag: "Cybersecurity"
+---
+
+*Part 1 built the attack surface: monitor mode, WEP's collapse, WPA2's handshake exposure. Part 2 broke the cryptographic foundation with Shor's algorithm, introduced quantum teleportation, and exposed ARP Spoofing as the attack beneath all of it. This article answers the question those two left open: why don't we have cryptographically relevant quantum computers yet — and what stands between noisy qubits and a working Shor run?*
+
+*The answer is error correction. We build it from first principles — classical first, then quantum — because the quantum version is best understood as a deliberate departure from everything the classical version assumes.*
+
+---
+
+## Introduction
+
+In Part 2, we established that Shor's algorithm reduces RSA-2048 factorization from sub-exponential (classical best: GNFS) to polynomial time — approximately O((log N)³) quantum operations. We also noted the hardware gap: breaking RSA-2048 requires roughly 4,000 *logical* qubits, and current physical qubits are noisy enough that you need approximately 1,000 physical qubits to encode one reliable logical qubit.
+
+That ratio — 1,000:1 — is the error correction problem. Before Shor can run at scale, that ratio needs to collapse. Understanding why it exists, and how researchers are working to close it, requires building up from Shannon.
+
+---
+
+## 1. Shannon's Foundation: The Noisy Channel Theorem
+
+### The Setup
+
+Every communication channel introduces noise. A photon traversing fiber picks up thermal fluctuations. A qubit couples to its environment and decoheres. A bit stored in DRAM can be flipped by a cosmic ray. The question Shannon formalized in 1948: *how much information can you reliably transmit through a noisy channel?*
+
+The **channel capacity** C gives the theoretical upper bound:
+
+```text
+C = B · log₂(1 + S/N)
+```
+
+Where B is the bandwidth in Hz and S/N is the signal-to-noise ratio. For a channel with B = 1 Hz and S/N = 7, C = 3 bits per second — meaning you can transmit up to 3 bits per second with arbitrarily low error probability, but not more.
+
+### The Noisy-Channel Coding Theorem
+
+Shannon's central result, sometimes called the fundamental theorem of information theory:
+
+> For any channel with capacity C and any target bit error rate ε > 0, there exists a code that achieves transmission rate R < C with error probability less than ε.
+
+Two things this theorem does *not* tell you: what that code looks like, and what its computational cost is. It proves existence — the engineering is left as an exercise. That exercise took decades.
+
+The complementary result — the **converse** — is equally important: no code can reliably transmit at rate R > C. The channel capacity is a hard wall.
+
+### Entropy and Redundancy
+
+The cost of error correction is redundancy. Shannon's source coding theorem establishes that the minimum number of bits needed to represent a message from source X is bounded below by the **entropy**:
+
+```text
+H(X) = -∑ p(xᵢ) · log₂ p(xᵢ)
+```
+
+A source that outputs only 0s has H = 0 — no information, no redundancy needed. A fair coin has H = 1 bit. Any error-correcting code adds bits beyond this minimum: the **code rate** R = k/n where k is the information bits and n is the total transmitted bits. Lower rate → more redundancy → better error correction. The Shannon limit tells you exactly how much redundancy buys you.
+
+---
+
+## 2. Hamming Codes: Linear Codes from First Principles
+
+### From Parity to Structured Redundancy
+
+The simplest error detection scheme is a **parity bit**: append one bit such that the total number of 1s in the codeword is even. A single-bit flip changes parity — detectable. A two-bit flip restores parity — not detectable. And crucially: parity detects but cannot *correct* errors. You know something went wrong, but not where.
+
+Richard Hamming, working at Bell Labs in 1950, was frustrated that the relay-based computer he used on weekends would encounter errors and reset, losing his jobs. He systematically worked out a code that could not only detect but *locate* a single-bit error — and therefore correct it.
+
+### Hamming(7,4): Construction
+
+The Hamming(7,4) code encodes 4 information bits into 7 transmitted bits. The 3 extra bits are **parity check bits**, placed at positions 1, 2, and 4 (powers of 2). Information bits occupy positions 3, 5, 6, 7.
+
+```text
+Position:  1   2   3   4   5   6   7
+           p₁  p₂  d₁  p₃  d₂  d₃  d₄
+```
+
+Each parity bit covers a specific subset of positions determined by the binary representation of position indices:
+
+```text
+p₁ covers positions where bit 0 of the index is 1: {1, 3, 5, 7}
+p₂ covers positions where bit 1 of the index is 1: {2, 3, 6, 7}
+p₃ covers positions where bit 2 of the index is 1: {4, 5, 6, 7}
+```
+
+The parity bits are chosen so that each check evaluates to 0 (even parity) for a valid codeword. After transmission, the receiver re-evaluates all three checks. If all pass: no error (or an undetectable multi-bit error). If exactly one fails: the binary representation of the failing checks gives the *position* of the flipped bit. Flip it back. Error corrected.
+
+### The Parity Check Matrix
+
+In linear algebra terms, Hamming codes are **linear codes** — the set of valid codewords forms a linear subspace. A codeword **c** is valid if and only if:
+
+```text
+H · cᵀ = 0
+```
+
+Where **H** is the **parity check matrix**. For Hamming(7,4):
+
+```text
+H = [ 1 0 1 0 1 0 1 ]
+    [ 0 1 1 0 0 1 1 ]
+    [ 0 0 0 1 1 1 1 ]
+```
+
+The columns of H are the binary representations of 1 through 7. When a received vector **r** has a single-bit error at position i, H·rᵀ = column i of H — which is precisely the binary representation of i. This is the **syndrome**: a direct pointer to the error location.
+
+```python
+import numpy as np
+
+H = np.array([
+    [1, 0, 1, 0, 1, 0, 1],
+    [0, 1, 1, 0, 0, 1, 1],
+    [0, 0, 0, 1, 1, 1, 1]
+], dtype=int)
+
+G = np.array([
+    [1, 0, 0, 0, 1, 0, 1],  # Generator matrix (systematic form)
+    [0, 1, 0, 0, 1, 1, 0],
+    [0, 0, 1, 0, 0, 1, 1],
+    [0, 0, 0, 1, 1, 1, 1]
+], dtype=int)
+
+def hamming_encode(data_bits):
+    """Encode 4 data bits into 7-bit Hamming codeword."""
+    return (data_bits @ G) % 2
+
+def hamming_syndrome(received):
+    """Compute syndrome. Returns error position (1-indexed) or 0 if no error."""
+    s = (H @ received) % 2
+    position = s[0] * 1 + s[1] * 2 + s[2] * 4  # binary to decimal
+    return position
+
+def hamming_decode(received):
+    """Decode received 7-bit vector, correcting single-bit errors."""
+    corrected = received.copy()
+    pos = hamming_syndrome(received)
+    if pos > 0:
+        corrected[pos - 1] ^= 1  # flip the error bit (0-indexed)
+    return corrected[[2, 4, 5, 6]]  # extract data bits at positions 3,5,6,7
+
+# Example
+data = np.array([1, 0, 1, 1])
+codeword = hamming_encode(data)
+print(f"Encoded: {codeword}")  # [1 0 1 0 0 1 0] (example)
+
+# Introduce a single-bit error at position 3
+received = codeword.copy()
+received[2] ^= 1
+print(f"Received (with error): {received}")
+
+syndrome_pos = hamming_syndrome(received)
+print(f"Syndrome points to position: {syndrome_pos}")
+
+recovered = hamming_decode(received)
+print(f"Recovered data: {recovered}")  # should match original
+```
+
+### Minimum Distance and Error Correction Capacity
+
+The **Hamming distance** d(u,v) between two codewords u and v is the number of positions where they differ. The **minimum distance** d_min of a code determines its error-correction capability:
+
+```text
+t = ⌊(d_min - 1) / 2⌋   (number of errors correctable)
+e = d_min - 1             (number of errors detectable)
+```
+
+Hamming(7,4) has d_min = 3: it corrects 1 error and detects 2. To correct t errors, you need d_min ≥ 2t + 1. This is the **Hamming bound** (sphere-packing bound):
+
+```text
+2^n / V(n,t) ≥ 2^k
+```
+
+Where `V(n,t) = ∑ᵢ₌₀ᵗ C(n,i)` is the volume of a Hamming ball of radius t. Codes that achieve this bound with equality are called **perfect codes** — Hamming codes are among them.
+
+The code rate of Hamming(7,4) is R = 4/7 ≈ 0.571. You pay 3 bits of overhead to protect 4 information bits against single-bit errors.
+
+---
+
+## 3. The Bridge: Why Classical Error Correction Fails on Qubits
+
+Before building quantum error correction, we need to understand exactly why classical techniques don't transfer. There are three fundamental obstructions — and each one forces a structural redesign.
+
+### Obstruction 1: The No-Cloning Theorem
+
+Classical error correction's simplest strategy is **repetition**: encode bit 0 as 000, bit 1 as 111. A majority vote after transmission corrects any single-bit flip.
+
+This requires *copying* the information bit. On a qubit, copying is forbidden.
+
+The **no-cloning theorem** states: there is no unitary operation U such that U|ψ⟩|0⟩ = |ψ⟩|ψ⟩ for all |ψ⟩. The proof is immediate from linearity. If U|0⟩|0⟩ = |0⟩|0⟩ and U|1⟩|0⟩ = |1⟩|1⟩, then:
+
+```text
+U(α|0⟩ + β|1⟩)|0⟩ = α|0⟩|0⟩ + β|1⟩|1⟩
+                    ≠ (α|0⟩ + β|1⟩)(α|0⟩ + β|1⟩)
+```
+
+Superposition states cannot be cloned. Quantum error correction must encode *without* copying — spreading information across entanglement instead.
+
+### Obstruction 2: Measurement Collapses the State
+
+Classical syndrome computation is free: you can read the bits, compute the parity checks, and identify the error without disturbing the codeword.
+
+In quantum mechanics, **measurement is destructive**. Measuring a qubit in superposition α|0⟩ + β|1⟩ collapses it to |0⟩ with probability |α|² or |1⟩ with probability |β|² — destroying the superposition you were trying to protect.
+
+Syndrome extraction in QEC must be done without measuring (and therefore collapsing) the data qubits. The solution uses **ancilla qubits** and **indirect measurement**: entangle the data register with ancilla qubits, measure only the ancillas, and infer information about the error syndrome without learning — or disturbing — the logical state.
+
+### Obstruction 3: Continuous Error Space
+
+Classical bits can only be flipped (0→1 or 1→0). Error correction needs to handle one type of discrete error.
+
+Qubits can suffer errors in a **continuous space**. A general single-qubit error is an arbitrary SU(2) rotation:
+
+```text
+ε|ψ⟩ = (a·I + b·X + c·Y + d·Z)|ψ⟩
+```
+
+Where X, Y, Z are the Pauli matrices and a, b, c, d are complex coefficients with |a|² + |b|² + |c|² + |d|² = 1. An infinite number of possible errors seems to require an infinite number of correction operations.
+
+The key insight — due to Knill and Laflamme (1997) — is that if a code can correct the three **Pauli errors** `{X, Y, Z}` independently, it can correct *any* error in their span. Measuring the syndrome **discretizes** the error: the ancilla measurement forces the continuous error to collapse onto one of the discrete Pauli operators. You only need to correct a finite set.
+
+This is not obvious. It is the conceptual cornerstone of quantum error correction.
+
+---
+
+## 4. Quantum Error Correction: Shor's 9-Qubit Code
+
+Peter Shor introduced the first quantum error-correcting code in 1995 — the same year as his factoring algorithm. The [[9,1,3]] code encodes 1 logical qubit into 9 physical qubits and corrects arbitrary single-qubit errors.
+
+### The Two-Layer Structure
+
+Shor's code addresses bit-flip errors and phase-flip errors separately, then combines them.
+
+**Layer 1 — Bit-flip protection** (3-qubit repetition code):
+
+```text
+|0⟩_L → |000⟩
+|1⟩_L → |111⟩
+```
+
+This is classical repetition — but for qubits. It protects against X errors (bit flips) but does nothing for Z errors (phase flips).
+
+**Layer 2 — Phase-flip protection**:
+
+Note that a Z error maps |+⟩ → |-⟩ (where |+⟩ = (|0⟩+|1⟩)/√2 and |-⟩ = (|0⟩-|1⟩)/√2). In the Hadamard-rotated basis, a Z error *looks like* an X error. So: apply Hadamard to each block, use 3-qubit repetition in that basis.
+
+**Combined encoding**:
+
+```text
+|0⟩_L → (|000⟩ + |111⟩)^⊗3 / 2√2
+|1⟩_L → (|000⟩ - |111⟩)^⊗3 / 2√2
+```
+
+Spelled out fully:
+
+```text
+|0⟩_L = (1/2√2)(|000⟩+|111⟩)(|000⟩+|111⟩)(|000⟩+|111⟩)
+|1⟩_L = (1/2√2)(|000⟩-|111⟩)(|000⟩-|111⟩)(|000⟩-|111⟩)
+```
+
+### The Encoding Circuit
+
+```text
+Logical |ψ⟩ = α|0⟩ + β|1⟩
+
+Input qubit  ──●──────────────────●─────────────────────●──
+               │                  │                     │
+Ancilla 1   ──X──H──●──●──────   X──H──●──●──────   X──H──●──●──
+Ancilla 2       │   │            │   │            │   │
+Ancilla 3       X───┼──          X───┼──          X───┼──
+                    │                │                 │
+Ancilla 4           X──              X──               X──
+...
+
+(Simplified — full 9-qubit encoding requires:
+1. Two CNOTs to prepare 3-qubit repetition blocks
+2. Hadamards on each block's lead qubit
+3. Two more CNOTs per block for phase-flip protection)
+```
+
+Full circuit in Qiskit:
+
+```python
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+
+def shor_encode(circuit, q, ancilla):
+    """
+    Encode logical qubit q[0] into q[0..8] using Shor's 9-qubit code.
+    q: 9-qubit register (q[0] = logical input, q[1..8] = ancilla)
+    """
+    # Step 1: Two CNOTs to create 3-block repetition structure
+    circuit.cx(q[0], q[3])
+    circuit.cx(q[0], q[6])
+
+    # Step 2: Hadamard on each block's first qubit
+    circuit.h(q[0])
+    circuit.h(q[3])
+    circuit.h(q[6])
+
+    # Step 3: Two CNOTs per block for phase encoding
+    circuit.cx(q[0], q[1])
+    circuit.cx(q[0], q[2])
+    circuit.cx(q[3], q[4])
+    circuit.cx(q[3], q[5])
+    circuit.cx(q[6], q[7])
+    circuit.cx(q[6], q[8])
+
+def shor_bit_flip_syndrome(circuit, data, ancilla, classical):
+    """
+    Measure bit-flip syndrome for one 3-qubit block.
+    Uses two ancilla qubits. Syndrome is stored in classical bits.
+    """
+    # Ancilla 0: parity of data[0] and data[1]
+    circuit.cx(data[0], ancilla[0])
+    circuit.cx(data[1], ancilla[0])
+    # Ancilla 1: parity of data[1] and data[2]
+    circuit.cx(data[1], ancilla[1])
+    circuit.cx(data[2], ancilla[1])
+    # Measure ancillas only
+    circuit.measure(ancilla[0], classical[0])
+    circuit.measure(ancilla[1], classical[1])
+
+# Syndrome interpretation (bit_flip):
+# 00 → no error
+# 10 → error on qubit 0
+# 11 → error on qubit 1
+# 01 → error on qubit 2
+```
+
+### Syndrome Extraction Without State Collapse
+
+The critical subtlety in the code above: `circuit.measure(ancilla[0], classical[0])` measures the *ancilla*, not the data qubit. The data register's logical state is untouched — but the measurement result tells us whether the parity of `{data[0], data[1]}` is even or odd.
+
+If it's odd, something flipped. The second syndrome bit tells us whether it was data[0], data[1], or data[2]. We then apply a corrective X gate to the identified qubit. The logical state is recovered without ever directly observing the superposition.
+
+This is ancilla-based **stabilizer measurement** — the core technique of all practical QEC.
+
+---
+
+## 5. Stabilizer Formalism (The Framework Behind All Modern QEC)
+
+Shor's code is one instance of a broader algebraic framework: **stabilizer codes**. Understanding this framework is necessary to understand surface codes.
+
+### Stabilizers
+
+A stabilizer is an operator S from the **Pauli group** Gₙ (n-fold tensor products of `{I, X, Y, Z, -I, -X, -Y, -Z}`) such that:
+
+```text
+S|ψ⟩ = +1·|ψ⟩
+```
+
+The codeword |ψ⟩ is a simultaneous +1 eigenstate of all stabilizers in the stabilizer group `S = ⟨S₁, S₂, ..., Sₙ₋ₖ⟩`. For an [[n,k,d]] code encoding k logical qubits into n physical qubits, the stabilizer group has n-k generators.
+
+**Why this works for error detection**: An error E maps |ψ⟩ to E|ψ⟩. When we measure stabilizer Sᵢ on the corrupted state:
+
+```text
+Sᵢ(E|ψ⟩) = SᵢE|ψ⟩
+```
+
+If E commutes with Sᵢ: SᵢE = ESᵢ → Sᵢ(E|ψ⟩) = E(Sᵢ|ψ⟩) = E(+1|ψ⟩) → measurement outcome +1.  
+If E anticommutes with Sᵢ: SᵢE = -ESᵢ → measurement outcome -1.
+
+The **syndrome** is the vector of +1/-1 outcomes across all stabilizer measurements. It identifies the error without revealing the logical state — because we're measuring the stabilizers, not the computational basis.
+
+### Shor Code Stabilizers
+
+The 9-qubit Shor code has 8 stabilizer generators (= 9 physical - 1 logical):
+
+```text
+Bit-flip stabilizers (within each 3-qubit block):
+S₁ = Z₁Z₂         S₂ = Z₂Z₃
+S₃ = Z₄Z₅         S₄ = Z₅Z₆
+S₅ = Z₇Z₈         S₆ = Z₈Z₉
+
+Phase-flip stabilizers (across blocks):
+S₇ = X₁X₂X₃X₄X₅X₆
+S₈ = X₄X₅X₆X₇X₈X₉
+```
+
+An X error on qubit 1 anticommutes with S₁ (since XZ = -ZX), giving syndrome bit 1 a -1 outcome. The syndrome pattern uniquely identifies the error location and type.
+
+---
+
+## 6. Surface Codes: Toward Fault Tolerance at Scale
+
+Shor's code proved the concept. But it has practical limitations for large-scale computation: it requires long-range qubit interactions (qubits across different blocks must interact), has relatively low code distance for its physical qubit count, and concatenating it to higher distances is resource-intensive.
+
+**Surface codes**, introduced by Kitaev (1997) and developed for practical implementation by Fowler et al., are the leading candidate for fault-tolerant quantum computation. They require only nearest-neighbor interactions on a 2D grid — compatible with current fabrication technology.
+
+### The 2D Lattice
+
+A distance-d surface code arranges (2d²-2d+1) physical qubits on a 2D lattice. Qubits sit on the edges of a grid; **plaquette operators** (stabilizers) act on faces and vertices.
+
+```text
+d=3 surface code (13 data qubits + 12 ancilla qubits = 25 total):
+
+·─q─·─q─·
+  |   |
+q─·─q─·─q
+  |   |
+·─q─·─q─·
+  |   |
+q─·─q─·─q
+  |   |
+·─q─·─q─·
+
+(q = data qubit, · = vertex stabilizer, face = plaquette stabilizer)
+```
+
+Two types of stabilizers tile the lattice:
+
+```text
+Z-type (plaquette): ZZZZ on four data qubits around a face
+    → detects X errors (bit flips)
+
+X-type (vertex): XXXX on four data qubits around a vertex
+    → detects Z errors (phase flips)
+```
+
+Boundary qubits interact with only 2 or 3 neighbors rather than 4 — the boundary conditions break the symmetry in a way that defines the two logical operators.
+
+### Logical Operators
+
+The logical X̄ operator is a chain of X operations connecting the top boundary to the bottom boundary. The logical Z̄ operator is a chain of Z operations connecting the left boundary to the right boundary. They commute with all stabilizers (preserving the codespace) but anticommute with each other (implementing the logical qubit algebra).
+
+An error becomes **uncorrectable** if it forms a chain spanning the lattice — connecting opposite boundaries. A chain of length less than d is correctable. This is why the code distance d bounds the error correction capability: you need at least d errors to create a logical error.
+
+### The Threshold Theorem
+
+The most important result in quantum fault tolerance:
+
+> There exists a **physical error rate threshold** p_th such that for p < p_th, the logical error rate decreases exponentially with code distance d.
+
+For surface codes, the threshold is approximately **p_th ≈ 1%** (under reasonable noise models). Below this threshold, adding more qubits (increasing d) makes the logical qubit *more* reliable, exponentially. Above it, more qubits make things worse.
+
+The logical error rate scales approximately as:
+
+```text
+p_L ≈ A · (p / p_th)^⌈(d+1)/2⌉
+```
+
+For a distance-7 surface code at p = 0.1%:
+
+```text
+p_L ≈ A · (0.001 / 0.01)^4 = A · 10⁻⁸
+```
+
+Physical error rate 0.1% → logical error rate ~10⁻⁸. The error suppression is dramatic.
+
+### Current Hardware Reality
+
+| Processor | Physical qubits | Physical error rate | Status |
+|---|---|---|---|
+| Google Willow (2024) | 105 | ~0.15% (2Q gates) | Below threshold |
+| IBM Heron (2023) | 133 | ~0.2% (2Q gates) | Near threshold |
+| Microsoft/Quantinuum (2024) | 32 (trapped ion) | ~0.1% | Below threshold |
+
+Google's Willow announcement in December 2024 was significant: they demonstrated that logical error rates decrease as distance increases — the threshold behavior the theory predicts. This is the first experimental confirmation that surface codes work as fault-tolerance theory requires.
+
+The critical numbers for RSA-2048 via Shor:
+- Logical qubits required: ~4,000
+- Physical qubits per logical qubit (at p=0.1%, d=17): ~1,000
+- Total physical qubits: **~4 million**
+
+Current best: ~1,000 physical qubits. The gap is real, but the trajectory is now clearly downward.
+
+### Surface Code Syndrome Cycle
+
+```text
+One syndrome extraction cycle (repeated continuously):
+
+Physical layer:
+  Data qubits: ──────────────────────────
+  Ancilla:     ──H──●──●──●──●──H──M──reset──
+
+Logical layer (after classical decoding):
+  Syndrome bit: +1 or -1 for each stabilizer
+
+Classical decoder (MWPM or neural net):
+  Syndrome history → most likely error chain → correction
+```
+
+The **minimum weight perfect matching (MWPM)** decoder processes syndrome measurements and finds the minimum-weight correction that explains the observed pattern. This runs classically in real time — it's the interface between quantum hardware and classical control.
+
+---
+
+## 7. The Connection Back: QEC, Shor, and the PQC Timeline
+
+The thread from Parts 1 and 2 completes here.
+
+**Why Shor hasn't broken RSA yet**: Not because the algorithm is wrong — it isn't. Because running it fault-tolerantly requires millions of physical qubits below the error threshold, performing billions of syndrome cycles correctly, with a classical decoder keeping up in real time. Every piece of that pipeline needs to work simultaneously.
+
+**What quantum error correction progress means for HNDL**: The "Harvest Now, Decrypt Later" threat doesn't require a working Shor run today. It requires the adversary to believe — with sufficient confidence — that a working Shor run will arrive before the harvested data loses value. QEC progress makes that belief more credible, which moves the rational HNDL decision point earlier.
+
+The timeline from NIST's PQC standardization (completed 2024) to full infrastructure migration is measured in years to decades. That migration is running in parallel with QEC development. Whichever arrives first determines whether the transition was timely or too late.
+
+**What CRYSTALS-Kyber and Dilithium protect against**: Both are based on the hardness of lattice problems (Module Learning With Errors). No quantum speedup analogous to Shor's is known for these problems — Grover's algorithm provides only a square-root speedup, insufficient to make them tractable. They are designed explicitly to remain hard even after fault-tolerant quantum computers exist.
+
+**What they don't protect against**: Local network attacks. ARP Spoofing (Part 2) operates below the encryption layer. A perfectly implemented Kyber key exchange with AES-256-GCM still exposes unencrypted traffic if ARP cache is poisoned before the TLS session is established. Layer 2 defenses (DAI, 802.1X) are not optional when the threat model includes the local network.
+
+---
+
+## Conclusion and What's Next
+
+This article built error correction from Shannon's capacity theorem through Hamming codes, crossed the conceptual bridge into quantum mechanics, and traced the path from Shor's 9-qubit code through stabilizer formalism to surface codes and the threshold theorem.
+
+The key thread: quantum error correction is not classical error correction adapted for qubits. It is a fundamentally different architecture — one that encodes information in entanglement rather than redundancy, extracts syndrome information without disturbing the logical state, and exploits the discretization of continuous errors through measurement. Every one of these departures from classical technique was forced by quantum mechanics itself.
+
+The next article in this series turns to **Quantum Key Distribution in full**: the BB84 protocol dissected at the operator level, E91 and entanglement-based QKD, the security proof structure (information-theoretic vs computational), and the engineering reality of QKD networks — including why the authentication channel is the weak point, and how QKD and PQC relate to each other in a realistic threat model.
+
+---
+
+*All code in this article is written for clarity and pedagogical accuracy. Qiskit examples are compatible with Qiskit Terra ≥ 0.25. The Hamming code implementation assumes no channel errors beyond single-bit flips; production implementations require additional error detection layers.*

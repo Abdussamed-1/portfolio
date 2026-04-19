@@ -24,6 +24,14 @@ export const BLOG_POST_TRANSLATIONS: Record<
     en: "securing-data-part2-rewritten",
     tr: "securing-data-part2-rewritten-tr",
   },
+  "wireless-network-security-part-3-quantum-error-correction": {
+    en: "wireless-network-security-part-3-quantum-error-correction",
+    tr: "kablosuz-ag-guvenligi-bolum-3-kuantum-hata-duzeltme-tr",
+  },
+  "kablosuz-ag-guvenligi-bolum-3-kuantum-hata-duzeltme-tr": {
+    en: "wireless-network-security-part-3-quantum-error-correction",
+    tr: "kablosuz-ag-guvenligi-bolum-3-kuantum-hata-duzeltme-tr",
+  },
 };
 
 export function getTranslatedBlogSlug(

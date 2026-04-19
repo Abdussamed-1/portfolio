@@ -1,0 +1,311 @@
+---
+title: "Kablosuz Ağ Güvenliği — Bölüm 3: Artıklık, Sendromlar ve Hata Toleransı: Gürültülü Donanımdan Güvenilir Qubitler İnşa Etmek"
+subtitle: "Seri: Kablosuz Ağ Güvenliği — Bölüm 3"
+summary: "Shannon ve Hamming'den Shor koduna ve surface-code eşik teoremine: gürültülü qubitlerden güvenilir mantıksal qubitlere giden yolda asıl darboğaz neden hata düzeltme?"
+image: "/images/projects/project-01/articleimg.png"
+publishedAt: "2026-04-19"
+tag: "Siber Güvenlik"
+---
+
+*Bölüm 1 saldırı yüzeyini kurdu: monitor mode, WEP'in çöküşü, WPA2 handshake maruziyeti. Bölüm 2, Shor algoritmasıyla kriptografik temeli sarstı, kuantum teleportasyonu tanıttı ve hepsinin altında çalışan saldırı olarak ARP Spoofing'i gösterdi. Bu yazı, o iki bölümün açık bıraktığı soruyu cevaplıyor: neden hala kriptografik ölçekte kuantum bilgisayarlarımız yok ve gürültülü qubitlerle çalışan bir Shor yürütmesi arasında ne var?*
+
+*Cevap: hata düzeltme. Konuyu ilk prensiplerden kuruyoruz — önce klasik, sonra kuantum — çünkü kuantum versiyon, klasik yaklaşımın varsaydığı her şeyden bilinçli bir kopuş olarak daha iyi anlaşılır.*
+
+---
+
+## Giriş
+
+Bölüm 2'de Shor algoritmasının RSA-2048 çarpanlara ayırma maliyetini klasik alt-üstel ölçekten (en iyi klasik yöntem: GNFS) polinomsal ölçeğe indirdiğini gördük: yaklaşık O((log N)^3) kuantum işlem. Donanım boşluğunu da not etmiştik: RSA-2048 kırmak için yaklaşık 4.000 **mantıksal** qubit gerekiyor ve mevcut fiziksel qubitler yeterince gürültülü olduğu için bir güvenilir mantıksal qubiti kodlamak adına yaklaşık 1.000 fiziksel qubite ihtiyaç duyuluyor.
+
+İşte bu 1.000:1 oranı, hata düzeltme problemidir. Shor'un ölçekli çalışabilmesi için bu oranın çökmesi gerekiyor. Neden var olduğunu ve araştırmacıların bunu nasıl düşürmeye çalıştığını anlamak için Shannon'dan başlamamız gerekiyor.
+
+---
+
+## 1. Shannon Temeli: Gürültülü Kanal Teoremi
+
+### Kurulum
+
+Her iletişim kanalı gürültü üretir. Fiberde ilerleyen bir foton termal dalgalanmalar toplar. Bir qubit çevresiyle etkileşip decohere olur. DRAM'de saklanan bir bit kozmik ışınla flip olabilir. Shannon'ın 1948'de formüle ettiği soru şuydu: *gürültülü bir kanaldan ne kadar bilgiyi güvenilir şekilde iletebilirsiniz?*
+
+**Kanal kapasitesi** C teorik üst sınırı verir:
+
+```text
+C = B · log₂(1 + S/N)
+```
+
+Burada B (Hz cinsinden bant genişliği), S/N ise sinyal-gürültü oranıdır. B = 1 Hz ve S/N = 7 için C = 3 bit/s çıkar. Yani hatayı istenen kadar küçülterek saniyede en fazla 3 bit iletebilirsiniz; daha fazlası güvenilir olmaz.
+
+### Gürültülü Kanal Kodlama Teoremi
+
+Shannon'ın temel sonucu (bilgi teorisinin temel teoremi):
+
+> Kapasitesi C olan herhangi bir kanal için ve herhangi bir hedef bit hata oranı ε > 0 için, R < C hızında çalışan ve hata olasılığı ε'den küçük olan bir kod vardır.
+
+Teoremin söylemediği iki şey: bu kodun nasıl göründüğü ve hesaplama maliyeti. Varlığı ispatlar, mühendisliği size bırakır.
+
+Tamamlayıcı sonuç (**converse**) en az bunun kadar kritiktir: R > C olduğunda hiçbir kod güvenilir iletim yapamaz. Kanal kapasitesi sert bir duvardır.
+
+### Entropi ve Artıklık
+
+Hata düzeltmenin bedeli artıklıktır. Shannon kaynak kodlama teoremi, bir kaynaktan gelen mesajı temsil etmek için gereken minimum bit sayısının **entropi** ile sınırlı olduğunu söyler:
+
+```text
+H(X) = -∑ p(xᵢ) · log₂ p(xᵢ)
+```
+
+Sadece 0 üreten bir kaynakta H = 0'dır. Adil para için H = 1 bittir. Hata düzeltme kodu bu minimumun üstüne bit ekler. **Kod oranı** R = k/n (k bilgi biti, n toplam bit). Oran düştükçe artıklık artar, düzeltme gücü artar.
+
+---
+
+## 2. Hamming Kodları: İlk Prensiplerden Lineer Kodlar
+
+### Pariteden Yapısal Artıklığa
+
+En basit hata tespit yöntemi **parite bitidir**: toplam 1 sayısı çift olacak şekilde bir bit eklersiniz. Tek-bit flip pariteyi bozar (tespit edilir). İki-bit flip pariteyi geri getirir (kaçabilir). Ayrıca parite yalnızca tespit eder, düzeltmez.
+
+Richard Hamming 1950'de Bell Labs'ta, hafta sonu işleri hatadan dolayı resetlenince tek-bit hatayı sadece tespit değil aynı zamanda konumlandırıp düzelten bir kod geliştirdi.
+
+### Hamming(7,4): Kurulum
+
+Hamming(7,4), 4 bilgi bitini 7 bitlik kod sözcüğüne çevirir. Eklenen 3 bit **parite kontrol bitidir** ve 1, 2, 4. pozisyonlara yerleşir:
+
+```text
+Pozisyon:  1   2   3   4   5   6   7
+           p₁  p₂  d₁  p₃  d₂  d₃  d₄
+```
+
+Parite bitlerinin kapsadığı pozisyonlar indeksin ikili gösterimine göre belirlenir:
+
+```text
+p₁: indeksin 0. biti 1 olanlar -> {1, 3, 5, 7}
+p₂: indeksin 1. biti 1 olanlar -> {2, 3, 6, 7}
+p₃: indeksin 2. biti 1 olanlar -> {4, 5, 6, 7}
+```
+
+Geçerli kod sözcüğünde tüm kontroller çift parite verir. Alıcı kontrolleri tekrar hesaplar. Tek hata varsa, başarısız kontrollerin ikili deseni hatalı bit pozisyonunu doğrudan verir.
+
+### Parity Check Matrisi
+
+Lineer cebirde bir kod sözcüğü **c** şu koşulla geçerlidir:
+
+```text
+H · cᵀ = 0
+```
+
+Hamming(7,4) için:
+
+```text
+H = [ 1 0 1 0 1 0 1 ]
+    [ 0 1 1 0 0 1 1 ]
+    [ 0 0 0 1 1 1 1 ]
+```
+
+H'nin sütunları 1..7'nin ikili gösterimidir. Alınan vektörde tek-bit hata i konumundaysa sendrom `H·rᵀ`, H'nin i. sütununu verir; yani hata adresini doğrudan söyler.
+
+```python
+import numpy as np
+
+H = np.array([
+    [1, 0, 1, 0, 1, 0, 1],
+    [0, 1, 1, 0, 0, 1, 1],
+    [0, 0, 0, 1, 1, 1, 1]
+], dtype=int)
+
+G = np.array([
+    [1, 0, 0, 0, 1, 0, 1],  # Üreteç matrisi (systematic form)
+    [0, 1, 0, 0, 1, 1, 0],
+    [0, 0, 1, 0, 0, 1, 1],
+    [0, 0, 0, 1, 1, 1, 1]
+], dtype=int)
+
+def hamming_encode(data_bits):
+    """4 bit veriyi 7 bit Hamming kod sözcüğüne çevirir."""
+    return (data_bits @ G) % 2
+
+def hamming_syndrome(received):
+    """Sendromu hesaplar. Hata konumu (1-index) ya da 0 döner."""
+    s = (H @ received) % 2
+    position = s[0] * 1 + s[1] * 2 + s[2] * 4
+    return position
+
+def hamming_decode(received):
+    """Alınan 7 biti decode eder, tek-bit hatayı düzeltir."""
+    corrected = received.copy()
+    pos = hamming_syndrome(received)
+    if pos > 0:
+        corrected[pos - 1] ^= 1
+    return corrected[[2, 4, 5, 6]]
+```
+
+### Minimum Uzaklık ve Düzeltme Kapasitesi
+
+İki kod sözcüğü arasındaki Hamming uzaklığı farklı oldukları pozisyon sayısıdır. Kodun minimum uzaklığı `d_min` düzeltme gücünü belirler:
+
+```text
+t = ⌊(d_min - 1) / 2⌋   (düzeltilebilen hata sayısı)
+e = d_min - 1           (tespit edilebilen hata sayısı)
+```
+
+Hamming(7,4) için `d_min = 3`: 1 hatayı düzeltir, 2 hatayı tespit eder.
+
+Küre paketleme sınırı (**Hamming bound**):
+
+```text
+2^n / V(n,t) ≥ 2^k
+```
+
+Burada `V(n,t) = ∑ᵢ₌₀ᵗ C(n,i)` yarıçapı t olan Hamming küresinin hacmidir. Eşitliği sağlayan kodlara **mükemmel kod** denir; Hamming kodları bunlardandır.
+
+---
+
+## 3. Köprü: Klasik Hata Düzeltme Qubitlerde Neden Çalışmaz?
+
+Klasik tekniklerin kuantuma doğrudan taşınmasını engelleyen üç temel neden vardır:
+
+### Engel 1: No-Cloning Teoremi
+
+Klasik tekrar kodu 0'ı 000, 1'i 111 yapar. Bu, bilginin kopyalanmasını gerektirir.
+
+Kuantumda bilinmeyen durum kopyalanamaz:
+
+```text
+U|ψ⟩|0⟩ = |ψ⟩|ψ⟩   (tüm |ψ⟩ için mümkün değildir)
+```
+
+Lineerlik nedeniyle süperpozisyon durumları için bu eşitlik bozulur. Dolayısıyla QEC, kopyalama yerine bilgiyi dolaşıklıkla dağıtır.
+
+### Engel 2: Ölçüm Durumu Çökertir
+
+Klasikte bitleri okuyup sendrom hesaplamak veri durumunu bozmaz. Kuantumda doğrudan ölçüm, süperpozisyonu çökertir.
+
+Bu yüzden QEC'de sendrom çıkarımı **ancilla qubit** üzerinden dolaylı yapılır: veri register'ı ancilla ile etkileştirilir, sonra yalnızca ancilla ölçülür.
+
+### Engel 3: Sürekli Hata Uzayı
+
+Klasik bitte hata ayrık (flip/no-flip) yapıdadır. Qubitte genel tek-qubit hata sürekli bir SU(2) dönüşümü olabilir:
+
+```text
+ε|ψ⟩ = (a·I + b·X + c·Y + d·Z)|ψ⟩
+```
+
+İlk bakışta sonsuz olası hata var gibi görünür. Knill-Laflamme içgörüsü şudur: kod `{X, Y, Z}` Pauli hatalarını düzeltebiliyorsa, bu uzaydaki genel hataları da düzeltebilir. Sendrom ölçümü sürekli hatayı ayrık Pauli sınıflarına "projeler".
+
+---
+
+## 4. Kuantum Hata Düzeltme: Shor'un 9-Qubit Kodu
+
+Peter Shor 1995'te ilk QEC kodunu yayınladı. [[9,1,3]] kodu, 1 mantıksal qubiti 9 fiziksel qubitte kodlar ve tek-qubit hatalarını düzeltebilir.
+
+### İki Katmanlı Yapı
+
+**Katman 1 — Bit-flip koruması** (3'lü tekrar):
+
+```text
+|0⟩_L → |000⟩
+|1⟩_L → |111⟩
+```
+
+X hatasına karşı korur, Z hatasına karşı korumaz.
+
+**Katman 2 — Phase-flip koruması**:
+
+Hadamard bazında Z hatası, X gibi davranır. Bu yüzden Hadamard ile döndürülmüş bazda tekrar kodu uygulanır.
+
+Birleşik kodlama:
+
+```text
+|0⟩_L → (|000⟩ + |111⟩)^⊗3 / 2√2
+|1⟩_L → (|000⟩ - |111⟩)^⊗3 / 2√2
+```
+
+### Durumu Çökertmeden Sendrom Çıkarma
+
+Kritik nokta: ölçüm veri qubitinde değil ancilla'dadır. Böylece mantıksal durum bozulmadan hata paritesi öğrenilir.
+
+Bu, pratik QEC'nin çekirdeği olan ancilla tabanlı **stabilizer measurement** yaklaşımıdır.
+
+---
+
+## 5. Stabilizer Formalizmi (Modern QEC'nin Çerçevesi)
+
+Shor kodu daha genel bir cebirsel çerçevenin örneğidir: **stabilizer kodlar**.
+
+Bir stabilizer S, kod durumunu +1 özdeğerle sabitler:
+
+```text
+S|ψ⟩ = +1·|ψ⟩
+```
+
+[[n,k,d]] kodda n-k adet bağımsız stabilizer üreteci bulunur.
+
+Hata E olduğunda stabilizer ölçüm çıktıları sendromu verir:
+- E, S ile commute ediyorsa +1
+- anticommute ediyorsa -1
+
+Böylece hata bilgisi alınır; mantıksal durum açığa çıkmaz.
+
+---
+
+## 6. Surface Code: Ölçekte Hata Toleransı
+
+Shor kodu kavramı kanıtladı ancak büyük ölçek için pratikte sınırlı. En güçlü aday **surface code**:
+- 2D ızgarada en yakın komşu etkileşimi
+- üretimle daha uyumlu mimari
+- tekrarlı sendrom döngüsü + gerçek zamanlı klasik decoder
+
+### 2D Kafes
+
+Mesafesi d olan surface code, kabaca (2d²-2d+1) veri qubiti düzeni kurar (ancilla'lar eklenir).
+
+İki stabilizer tipi:
+- Z-type plaquette: X hatalarını tespit eder
+- X-type vertex: Z hatalarını tespit eder
+
+### Mantıksal Operatörler ve Kod Mesafesi
+
+Mantıksal X ve Z operatörleri sınırlar arasında zincir operatörlerdir. Düzeltilemeyen hata, karşı sınırları bağlayan bir hata zinciri oluştuğunda ortaya çıkar. Bu nedenle kod mesafesi d, doğrudan hata tolerans eşiğini belirler.
+
+### Eşik Teoremi
+
+> Fiziksel hata oranı p, eşik `p_th` altındaysa; kod mesafesi arttıkça mantıksal hata üstel olarak azalır.
+
+Surface code için pratik eşik yaklaşık `%1` mertebesindedir (gürültü modeline bağlı).
+
+Yaklaşık ölçekleme:
+
+```text
+p_L ≈ A · (p / p_th)^⌈(d+1)/2⌉
+```
+
+---
+
+## 7. Bağlantı: QEC, Shor ve PQC Zamanlaması
+
+Shor'un bugün RSA'yı kırmamış olmasının nedeni algoritmanın yanlış olması değil; fault-tolerant çalıştırmanın uçtan uca ölçeklenmesinin henüz mümkün olmamasıdır:
+- milyonlar seviyesinde fiziksel qubit
+- milyarlarca sendrom döngüsü
+- gerçek zamanlı klasik decoding
+
+Hepsi aynı anda güvenilir çalışmak zorunda.
+
+Bu yüzden "Harvest Now, Decrypt Later" tehdidi bugünden rasyoneldir. Saldırganın bugün Shor çalıştırması gerekmez; verinin ömrü bitmeden çalıştırabileceğine inanması yeterlidir.
+
+NIST'in PQC standardizasyonu 2024'te tamamlandı; geçiş yıllar sürüyor. QEC gelişimiyle yarış içinde ilerliyor.
+
+Kyber/Dilithium gibi şemalar Shor'a benzer hızlanması bilinen problemlere dayanmaz. Ancak bunlar ARP Spoofing gibi yerel ağ katmanı saldırılarını çözmez. Tehdit modelinde L2 varsa DAI, 802.1X gibi kontroller zorunludur.
+
+---
+
+## Sonuç ve Sonraki Bölüm
+
+Bu yazı Shannon kapasite teoreminden başlayıp Hamming kodlarına, oradan kuantum mekaniği engellerine, Shor'un 9-qubit koduna, stabilizer formalizmine ve surface code eşik teoremine uzanan hattı kurdu.
+
+Ana fikir:
+
+**Kuantum hata düzeltme, klasik hata düzeltmenin qubit uyarlaması değildir. No-cloning, ölçüm geri etkisi ve sürekli hata uzayı nedeniyle kuantum mekaniğinin zorladığı farklı bir mimaridir.**
+
+Serinin bir sonraki yazısı **QKD** odaklı olacak: BB84'ün operatör düzeyinde analizi, E91 ve dolaşıklık tabanlı QKD, güvenlik ispat çerçevesi ve QKD ağlarının mühendislik gerçekleri.
+
+---
+
+*Bu yazıdaki kod örnekleri pedagojik netlik için hazırlanmıştır. Qiskit örnekleri Qiskit Terra ≥ 0.25 ile uyumludur. Hamming kodu örnekleri tek-bit hata varsayar; üretim ortamında ek hata tespit katmanları gerekir.*
