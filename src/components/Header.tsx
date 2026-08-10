@@ -9,6 +9,7 @@ import { useLocale } from "@/contexts/LocaleContext";
 import { routes, display, person, getContent } from "@/resources";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageToggle } from "./LanguageToggle";
+import { AuthControls } from "./AuthControls";
 import styles from "./Header.module.scss";
 
 type TimeDisplayProps = {
@@ -48,7 +49,7 @@ export const Header = () => {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const locale = useLocale();
-  const { about, blog, work, gallery } = getContent(locale);
+  const { about, blog, work, gallery, weekly } = getContent(locale);
 
   useEffect(() => {
     if (!routes["/news"]) return;
@@ -72,6 +73,30 @@ export const Header = () => {
       (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(run);
     } else {
       setTimeout(run, 250);
+    }
+  }, [router, pathname]);
+
+  useEffect(() => {
+    if (!routes["/weekly"]) return;
+    if (pathname.startsWith("/weekly")) return;
+
+    const key = "prefetch:weekly";
+    try {
+      if (sessionStorage.getItem(key) === "1") return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      // ignore
+    }
+
+    const run = () => {
+      router.prefetch("/weekly");
+      fetch("/api/stackoverflow", { cache: "force-cache" }).catch(() => {});
+    };
+
+    if (typeof (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback === "function") {
+      (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(run);
+    } else {
+      setTimeout(run, 350);
     }
   }, [router, pathname]);
 
@@ -177,6 +202,25 @@ export const Header = () => {
                   </Row>
                 </>
               )}
+              {routes["/weekly"] && (
+                <>
+                  <Row s={{ hide: true }}>
+                    <ToggleButton
+                      prefixIcon="weekly"
+                      href="/weekly"
+                      label={weekly.label}
+                      selected={pathname.startsWith("/weekly")}
+                    />
+                  </Row>
+                  <Row hide s={{ hide: false }}>
+                    <ToggleButton
+                      prefixIcon="weekly"
+                      href="/weekly"
+                      selected={pathname.startsWith("/weekly")}
+                    />
+                  </Row>
+                </>
+              )}
               {routes["/news"] && (
                 <>
                   <Row s={{ hide: true }}>
@@ -196,6 +240,8 @@ export const Header = () => {
                   </Row>
                 </>
               )}
+              <Line background="neutral-alpha-medium" vert maxHeight="24" />
+              <AuthControls locale={locale} />
               <Line background="neutral-alpha-medium" vert maxHeight="24" />
               <LanguageToggle />
               {display.themeSwitcher && (

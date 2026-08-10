@@ -9,4 +9,5 @@ export { Providers } from "@/components/Providers";
 export { ScrollToHash } from "@/components/ScrollToHash";
 export { ThemeToggle } from "@/components/ThemeToggle";
 export { LanguageToggle } from "@/components/LanguageToggle";
+export { AuthControls } from "@/components/AuthControls";
 export { CustomMDX } from "@/components/mdx";

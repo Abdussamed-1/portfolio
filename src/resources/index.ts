@@ -6,6 +6,7 @@ export {
   home,
   about,
   blog,
+  weekly,
   work,
   gallery,
   getContent,

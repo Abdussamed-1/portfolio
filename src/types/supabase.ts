@@ -55,6 +55,75 @@ export interface Database {
         };
         Relationships: [];
       };
+      community_questions: {
+        Row: {
+          id: string;
+          clerk_user_id: string;
+          title: string;
+          body: string;
+          tags: string[];
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          clerk_user_id: string;
+          title: string;
+          body: string;
+          tags?: string[];
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          clerk_user_id?: string;
+          title?: string;
+          body?: string;
+          tags?: string[];
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      community_comments: {
+        Row: {
+          id: string;
+          question_id: string;
+          clerk_user_id: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          question_id: string;
+          clerk_user_id: string;
+          body: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          question_id?: string;
+          clerk_user_id?: string;
+          body?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      community_tag_prefs: {
+        Row: {
+          clerk_user_id: string;
+          tags: string[];
+          updated_at: string;
+        };
+        Insert: {
+          clerk_user_id: string;
+          tags?: string[];
+          updated_at?: string;
+        };
+        Update: {
+          clerk_user_id?: string;
+          tags?: string[];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

@@ -10,6 +10,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import BackgroundWithMobileFlow from "@/components/BackgroundWithMobileFlow";
 import { Footer, Header, RouteGuard, Providers } from "@/components";
+import { ClerkProviderGate } from "@/components/ClerkProviderGate";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { baseURL, effects, fonts, getContent, style, dataStyle, person, social } from "@/resources";
 import type { Locale } from "@/resources/translations";
@@ -192,6 +193,7 @@ export default async function RootLayout({
         />
       </head>
       <LocaleProvider initialLocale={locale}>
+        <ClerkProviderGate>
         <Providers>
           <Column
           as="body"
@@ -233,6 +235,7 @@ export default async function RootLayout({
           <Footer />
         </Column>
       </Providers>
+        </ClerkProviderGate>
       {isProduction && (
         <>
           <Analytics />

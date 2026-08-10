@@ -1,4 +1,4 @@
-import { About, Blog, Gallery, Home, Newsletter, Person, Social, Work } from "@/types";
+import { About, Blog, Gallery, Home, Newsletter, Person, Social, Weekly, Work } from "@/types";
 import { Line, Row, Text } from "@once-ui-system/core";
 import type { Locale } from "@/resources/translations";
 import { stringsByLocale } from "@/resources/translations";
@@ -295,6 +295,17 @@ const getBlog = (locale: Locale): Blog => ({
   description: stringsByLocale[locale].blogPageDescription,
 });
 
+const weeklyBase = {
+  path: "/weekly",
+};
+
+const getWeekly = (locale: Locale): Weekly => ({
+  ...weeklyBase,
+  label: stringsByLocale[locale].nav.weekly,
+  title: stringsByLocale[locale].weeklyPageTitle,
+  description: stringsByLocale[locale].weeklyPageDescription,
+});
+
 const workBase = {
   path: "/work",
   title: `Projects – ${person.name}`,
@@ -326,6 +337,7 @@ function getContent(locale: Locale) {
     home: getHome(locale),
     about: getAbout(locale),
     blog: getBlog(locale),
+    weekly: getWeekly(locale),
     work: getWork(locale),
     gallery: getGallery(locale),
     techNewsTitle: stringsByLocale[locale].techNewsTitle,
@@ -336,7 +348,8 @@ const newsletter = getNewsletter("en");
 const home = getHome("en");
 const about = getAbout("en");
 const blog = getBlog("en");
+const weekly = getWeekly("en");
 const work = getWork("en");
 const gallery = getGallery("en");
 
-export { person, social, newsletter, home, about, blog, work, gallery, getContent };
+export { person, social, newsletter, home, about, blog, weekly, work, gallery, getContent };

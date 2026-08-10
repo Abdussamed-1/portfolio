@@ -5,7 +5,7 @@ export type Locale = "en" | "tr";
 export const stringsByLocale: Record<
   Locale,
   {
-    nav: { home: string; about: string; work: string; blog: string; gallery: string };
+    nav: { home: string; about: string; work: string; blog: string; weekly: string; gallery: string };
     introTitle: string;
     introDescription: React.ReactNode;
     workTitle: string;
@@ -28,6 +28,26 @@ export const stringsByLocale: Record<
     blogPageDescription: string;
     earlierPosts: string;
     recentPosts: string;
+    weeklyPageTitle: string;
+    weeklyPageDescription: string;
+    weeklySearchPlaceholder: string;
+    weeklyClearTags: string;
+    weeklyVotes: string;
+    weeklyEmpty: string;
+    weeklyLoading: string;
+    weeklyBy: string;
+    weeklyCommunityTitle: string;
+    weeklyAskTitle: string;
+    weeklyAskBody: string;
+    weeklyAskTags: string;
+    weeklySubmit: string;
+    weeklySignInPrompt: string;
+    weeklySignInCta: string;
+    weeklyCommunityEmpty: string;
+    weeklyAuthNotReady: string;
+    weeklyComments: string;
+    weeklyAddComment: string;
+    weeklyCommentPlaceholder: string;
   }
 > = {
   en: {
@@ -36,6 +56,7 @@ export const stringsByLocale: Record<
       about: "About",
       work: "Work",
       blog: "Blog",
+      weekly: "Weekly",
       gallery: "News",
     },
     introTitle: "Introduction",
@@ -72,6 +93,27 @@ export const stringsByLocale: Record<
     blogPageDescription: "Blog by Samet Erkalp: AI, data science, cybersecurity, Kubernetes, and tech. Tutorials and articles.",
     earlierPosts: "Earlier posts",
     recentPosts: "Recent posts",
+    weeklyPageTitle: "Weekly",
+    weeklyPageDescription:
+      "Hot weekly Stack Overflow questions filtered by your tags, plus a community space to ask and discuss.",
+    weeklySearchPlaceholder: "Search questions…",
+    weeklyClearTags: "Clear tags",
+    weeklyVotes: "votes",
+    weeklyEmpty: "No questions match your filters.",
+    weeklyLoading: "Loading weekly feed…",
+    weeklyBy: "by",
+    weeklyCommunityTitle: "Community",
+    weeklyAskTitle: "Question title",
+    weeklyAskBody: "Details",
+    weeklyAskTags: "Tags (comma-separated)",
+    weeklySubmit: "Post question",
+    weeklySignInPrompt: "Sign in to ask a question or leave a comment.",
+    weeklySignInCta: "Sign in",
+    weeklyCommunityEmpty: "No community questions yet. Be the first.",
+    weeklyAuthNotReady: "Auth is not configured yet. Add Clerk keys to enable posting.",
+    weeklyComments: "Comments",
+    weeklyAddComment: "Reply",
+    weeklyCommentPlaceholder: "Write a comment…",
   },
   tr: {
     nav: {
@@ -79,6 +121,7 @@ export const stringsByLocale: Record<
       about: "Hakkımda",
       work: "Projeler",
       blog: "Blog",
+      weekly: "Haftalık",
       gallery: "Haberler",
     },
     introTitle: "Giriş",
@@ -115,5 +158,26 @@ export const stringsByLocale: Record<
     blogPageDescription: "Samet Erkalp'in blogu: yapay zeka, veri bilimi, siber güvenlik, Kubernetes ve teknoloji. Rehberler ve yazılar.",
     earlierPosts: "Önceki yazılar",
     recentPosts: "Son yazılar",
+    weeklyPageTitle: "Haftalık",
+    weeklyPageDescription:
+      "Stack Overflow haftanın öne çıkan soruları, seçtiğin etiketlerle filtrele; soru sorup tartışabileceğin topluluk alanı.",
+    weeklySearchPlaceholder: "Soru ara…",
+    weeklyClearTags: "Etiketleri temizle",
+    weeklyVotes: "oy",
+    weeklyEmpty: "Filtrelere uyan soru yok.",
+    weeklyLoading: "Haftalık akış yükleniyor…",
+    weeklyBy: "yazar",
+    weeklyCommunityTitle: "Topluluk",
+    weeklyAskTitle: "Soru başlığı",
+    weeklyAskBody: "Detaylar",
+    weeklyAskTags: "Etiketler (virgülle)",
+    weeklySubmit: "Soruyu gönder",
+    weeklySignInPrompt: "Soru sormak veya yorum yapmak için giriş yap.",
+    weeklySignInCta: "Giriş yap",
+    weeklyCommunityEmpty: "Henüz topluluk sorusu yok. İlk sen ol.",
+    weeklyAuthNotReady: "Kimlik doğrulama henüz yapılandırılmadı. Gönderim için Clerk anahtarlarını ekle.",
+    weeklyComments: "Yorumlar",
+    weeklyAddComment: "Yanıtla",
+    weeklyCommentPlaceholder: "Yorum yaz…",
   },
 };
