@@ -8,7 +8,7 @@ Personal website and professional presence for **Samet Erkalp** (AI & Data Scien
 
 ## Overview
 
-The site presents a cohesive narrative across **work history**, **education**, **technical strengths**, and **selected projects**, together with a **blog** and a **news** section. Content is available in **English and Turkish**, with theme support for light, dark, and system preferences, and contextual display of location and local time.
+The site presents a cohesive narrative across **work history**, **education**, **technical strengths**, and **selected projects**, together with a **blog** and a **news** section. Content is available in **English and Turkish**, with theme support for light, dark, and system preferences, and contextual display of location and local times.
 
 ---
 
@@ -25,7 +25,7 @@ The site presents a cohesive narrative across **work history**, **education**, *
 
 ---
 
-## Features
+## Feature
 
 - Bilingual interface (English / Turkish)
 - MDX-based blog and project pages
@@ -34,7 +34,7 @@ The site presents a cohesive narrative across **work history**, **education**, *
 
 ---
 
-## Tech stack
+## Technology stack
 
 - **Framework:** [Next.js](https://nextjs.org/) (App Router)
 - **Language:** TypeScript
