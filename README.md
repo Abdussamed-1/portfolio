@@ -1,4 +1,4 @@
-# Samet Erkalp — Portfolio
+# Samet Erkalp — Portfolios
 
 **Live site:** [sameterkalp.com](https://sameterkalp.com)
 
